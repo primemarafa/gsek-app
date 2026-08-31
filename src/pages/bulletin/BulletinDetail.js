@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
+import { ArrowLeft, Printer } from 'lucide-react';
 import './BulletinPrint.css';
 
 export default function BulletinDetail() {
@@ -33,13 +34,17 @@ export default function BulletinDetail() {
     <div className="page-container">
       <div className="page-header no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button className="btn btn-outline" onClick={() => navigate('/bulletin')}>← Retour</button>
+          <button className="btn btn-outline" onClick={() => navigate('/bulletin')}>
+            <ArrowLeft size={16} /> Retour
+          </button>
           <div>
             <h1 className="page-title">Bulletin — {bulletin.eleveNom}</h1>
             <p className="page-subtitle">{bulletin.trimestre} · {bulletin.annee}</p>
           </div>
         </div>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨 Imprimer le bulletin</button>
+        <button className="btn btn-secondary" onClick={handlePrint}>
+          <Printer size={16} /> Imprimer le bulletin
+        </button>
       </div>
 
       <div ref={printRef} className="bulletin-print">

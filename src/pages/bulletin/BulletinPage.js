@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  FileText,
+  Plus,
+  Search,
+  Filter,
+  Printer,
+  X
+} from 'lucide-react';
 
 export default function BulletinPage() {
   const { eleves, bulletins, addBulletin, CLASSES, MATIERES, ANNEES, TRIMESTRES } = useApp();
+  const toast = useToast();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [filterClasse, setFilterClasse] = useState('');
@@ -52,7 +62,9 @@ export default function BulletinPage() {
   };
 
   const handleSubmit = () => {
-    if (!form.eleveId) return alert('Sélectionnez un élève');
+    if (!form.eleveId) {
+      return toast.error('Veuillez sélectionner un élève pour le bulletin.');
+    }
     const eleve = eleves.find(e => e.id === form.eleveId);
     const moy = moyenneGenerale();
     addBulletin({
@@ -62,6 +74,7 @@ export default function BulletinPage() {
       moyenneGenerale: moy,
       mention: moy ? mention(moy).label : ''
     });
+    toast.success(`Bulletin généré pour ${eleve.nom} ${eleve.prenom} (Moyenne : ${moy || '—'}/20) !`);
     setShowModal(false);
     setForm({ eleveId: '', annee: '2024-2025', trimestre: '1er Trimestre', notes: [] });
   };
@@ -70,54 +83,65 @@ export default function BulletinPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">📋 Bulletins de Notes</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FileText size={28} /> Bulletins de Notes
+          </h1>
           <p className="page-subtitle">{bulletins.length} bulletin{bulletins.length > 1 ? 's' : ''} généré{bulletins.length > 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>➕ Nouveau bulletin</button>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={17} /> Nouveau bulletin
+        </button>
       </div>
 
       <div className="card">
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
           <div className="search-bar" style={{ flex: 1 }}>
-            <span>🔍</span>
+            <Search size={17} color="#94a3b8" />
             <input placeholder="Rechercher un élève..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select style={{ width: 'auto', minWidth: 160 }} value={filterClasse} onChange={e => setFilterClasse(e.target.value)}>
-            <option value="">Toutes les classes</option>
-            {CLASSES.map(c => <option key={c}>{c}</option>)}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Filter size={16} color="#64748b" />
+            <select style={{ width: 'auto', minWidth: 160 }} value={filterClasse} onChange={e => setFilterClasse(e.target.value)}>
+              <option value="">Toutes les classes</option>
+              {CLASSES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="icon">📋</div>
+            <div className="icon"><FileText size={44} /></div>
             <h3>Aucun bulletin</h3>
             <p>Créez le premier bulletin en cliquant sur "Nouveau bulletin"</p>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Élève</th><th>Classe</th><th>Année</th><th>Trimestre</th><th>Moyenne</th><th>Mention</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {filtered.map(b => {
-                const m = b.moyenneGenerale ? mention(b.moyenneGenerale) : null;
-                return (
-                  <tr key={b.id}>
-                    <td style={{ fontWeight: 600 }}>{b.eleveNom}</td>
-                    <td>{b.eleveClasse}</td>
-                    <td>{b.annee}</td>
-                    <td>{b.trimestre}</td>
-                    <td style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 16 }}>{b.moyenneGenerale || '—'}/20</td>
-                    <td>{m ? <span className={`badge ${m.cls}`}>{m.label}</span> : '—'}</td>
-                    <td>
-                      <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate(`/bulletin/${b.id}`)}>Voir / Imprimer</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr><th>Élève</th><th>Classe</th><th>Année</th><th>Trimestre</th><th>Moyenne</th><th>Mention</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {filtered.map(b => {
+                  const m = b.moyenneGenerale ? mention(b.moyenneGenerale) : null;
+                  return (
+                    <tr key={b.id}>
+                      <td style={{ fontWeight: 600 }}>{b.eleveNom}</td>
+                      <td>{b.eleveClasse}</td>
+                      <td>{b.annee}</td>
+                      <td>{b.trimestre}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 16 }}>{b.moyenneGenerale || '—'}/20</td>
+                      <td>{m ? <span className={`badge ${m.cls}`}>{m.label}</span> : '—'}</td>
+                      <td>
+                        <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate(`/bulletin/${b.id}`)}>
+                          <Printer size={14} /> Imprimer
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import {
+  GraduationCap,
+  UserPlus,
+  Search,
+  Filter,
+  Eye,
+  Trash2,
+  X
+} from 'lucide-react';
 
 export default function ElevesPage() {
   const { eleves, addEleve, deleteEleve, CLASSES } = useApp();
+  const toast = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterClasse, setFilterClasse] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({ nom: '', prenom: '', dateNaissance: '', sexe: 'M', classe: '6ème A', parentNom: '', parentTel: '', adresse: '', statut: 'actif' });
 
   const filtered = eleves.filter(e =>
@@ -16,76 +29,111 @@ export default function ElevesPage() {
   );
 
   const handleSubmit = () => {
-    if (!form.nom || !form.prenom) return alert('Nom et prénom requis');
-    addEleve(form);
+    if (!form.nom || !form.prenom) {
+      return toast.error('Le nom et le prénom sont obligatoires.');
+    }
+    const newEleve = addEleve(form);
+    toast.success(`Élève ${newEleve.nom} ${newEleve.prenom} inscrit avec le matricule ${newEleve.matricule} !`);
     setShowModal(false);
     setForm({ nom: '', prenom: '', dateNaissance: '', sexe: 'M', classe: '6ème A', parentNom: '', parentTel: '', adresse: '', statut: 'actif' });
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteEleve(deleteTarget.id);
+      toast.info(`L'élève ${deleteTarget.nom} ${deleteTarget.prenom} a été supprimé.`);
+      setDeleteTarget(null);
+    }
   };
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">🎒 Gestion des Élèves</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <GraduationCap size={28} /> Gestion des Élèves
+          </h1>
           <p className="page-subtitle">{eleves.length} élève{eleves.length > 1 ? 's' : ''} enregistré{eleves.length > 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>➕ Inscrire un élève</button>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <UserPlus size={17} /> Inscrire un élève
+        </button>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
           <div className="search-bar" style={{ flex: 1 }}>
-            <span>🔍</span>
+            <Search size={17} color="#94a3b8" />
             <input placeholder="Rechercher par nom, prénom ou matricule..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select style={{ width: 'auto', minWidth: 160 }} value={filterClasse} onChange={e => setFilterClasse(e.target.value)}>
-            <option value="">Toutes les classes</option>
-            {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Filter size={16} color="#64748b" />
+            <select style={{ width: 'auto', minWidth: 160 }} value={filterClasse} onChange={e => setFilterClasse(e.target.value)}>
+              <option value="">Toutes les classes</option>
+              {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="icon">🎒</div>
+            <div className="icon"><GraduationCap size={44} /></div>
             <h3>Aucun élève trouvé</h3>
-            <p>Inscrivez un nouvel élève pour commencer.</p>
+            <p>Inscrivez un nouvel élève ou modifiez vos critères de recherche.</p>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Matricule</th>
-                <th>Nom & Prénom</th>
-                <th>Classe</th>
-                <th>Sexe</th>
-                <th>Date de naissance</th>
-                <th>Parent / Tuteur</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(e => (
-                <tr key={e.id}>
-                  <td><span className="badge badge-info" style={{ fontFamily: 'monospace', fontSize: 12 }}>{e.matricule}</span></td>
-                  <td style={{ fontWeight: 600 }}>{e.nom} {e.prenom}</td>
-                  <td>{e.classe}</td>
-                  <td>{e.sexe === 'M' ? '♂ Garçon' : '♀ Fille'}</td>
-                  <td>{e.dateNaissance ? new Date(e.dateNaissance).toLocaleDateString('fr-SN') : '—'}</td>
-                  <td style={{ fontSize: 13 }}>{e.parentNom}<br /><span style={{ color: 'var(--text-muted)' }}>{e.parentTel}</span></td>
-                  <td><span className={`badge ${e.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{e.statut}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate(`/eleves/${e.id}`)}>Voir</button>
-                      <button className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => { if (window.confirm('Supprimer cet élève ?')) deleteEleve(e.id); }}>🗑</button>
-                    </div>
-                  </td>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Matricule</th>
+                  <th>Nom & Prénom</th>
+                  <th>Classe</th>
+                  <th>Sexe</th>
+                  <th>Date de naissance</th>
+                  <th>Parent / Tuteur</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id}>
+                    <td><span className="badge badge-info" style={{ fontFamily: 'monospace', fontSize: 12 }}>{e.matricule}</span></td>
+                    <td style={{ fontWeight: 600 }}>{e.nom} {e.prenom}</td>
+                    <td>{e.classe}</td>
+                    <td>{e.sexe === 'M' ? 'Garçon' : 'Fille'}</td>
+                    <td>{e.dateNaissance ? new Date(e.dateNaissance).toLocaleDateString('fr-SN') : '—'}</td>
+                    <td style={{ fontSize: 13 }}>{e.parentNom}<br /><span style={{ color: 'var(--text-muted)' }}>{e.parentTel}</span></td>
+                    <td><span className={`badge ${e.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{e.statut}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => navigate(`/eleves/${e.id}`)} title="Voir la fiche">
+                          <Eye size={14} /> Voir
+                        </button>
+                        <button className="btn btn-danger" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => setDeleteTarget(e)} title="Supprimer">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer un élève"
+        message={deleteTarget ? `Êtes-vous sûr de vouloir supprimer définitivement l'élève ${deleteTarget.nom} ${deleteTarget.prenom} (Matricule: ${deleteTarget.matricule}) ?` : ''}
+        confirmText="Oui, supprimer"
+        cancelText="Annuler"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -147,11 +195,13 @@ export default function ElevesPage() {
                 <label>Adresse</label>
                 <input value={form.adresse} onChange={e => setForm({ ...form, adresse: e.target.value })} placeholder="Dakar, Médina" />
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>⚡ Un matricule unique sera généré automatiquement</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>✦ Un matricule unique sera généré automatiquement</p>
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setShowModal(false)}>Annuler</button>
-              <button className="btn btn-primary" onClick={handleSubmit}>✅ Inscrire l'élève</button>
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                <UserPlus size={16} /> Inscrire l'élève
+              </button>
             </div>
           </div>
         </div>

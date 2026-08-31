@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Plus,
+  Filter,
+  PieChart as PieIcon,
+  X
+} from 'lucide-react';
 
 const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
 
@@ -9,6 +20,7 @@ const COLORS_DEP = ['#c8960c', '#e8b020', '#d85a30', '#993c1d'];
 
 export default function ComptabilitePage() {
   const { transactions, addTransaction } = useApp();
+  const toast = useToast();
   const [showModal, setShowModal] = useState(false);
   const [filterType, setFilterType] = useState('');
   const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], type: 'recette', categorie: 'Inscriptions', montant: '', description: '' });
@@ -27,8 +39,11 @@ export default function ComptabilitePage() {
   const pieDepenses = Object.entries(depensesCats).map(([name, value]) => ({ name, value }));
 
   const handleSubmit = () => {
-    if (!form.montant) return alert('Montant requis');
-    addTransaction({ ...form, montant: parseFloat(form.montant) });
+    if (!form.montant) {
+      return toast.error('Veuillez indiquer le montant de la transaction.');
+    }
+    const t = addTransaction({ ...form, montant: parseFloat(form.montant) });
+    toast.success(`Transaction ${t.ref} (${form.type}) enregistrée avec succès !`);
     setShowModal(false);
     setForm({ date: new Date().toISOString().split('T')[0], type: 'recette', categorie: 'Inscriptions', montant: '', description: '' });
   };
@@ -41,29 +56,33 @@ export default function ComptabilitePage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">💰 Comptabilité</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Wallet size={28} /> Comptabilité
+          </h1>
           <p className="page-subtitle">{transactions.length} transactions enregistrées</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>➕ Nouvelle transaction</button>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={17} /> Nouvelle transaction
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
         <div className="stat-card">
-          <div className="stat-icon green">📈</div>
+          <div className="stat-icon green"><TrendingUp size={24} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Total recettes</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--success)' }}>{fmt(totalRecettes)}</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon red">📉</div>
+          <div className="stat-icon red"><TrendingDown size={24} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Total dépenses</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--danger)' }}>{fmt(totalDepenses)}</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon blue">💼</div>
+          <div className="stat-icon blue"><Scale size={24} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Solde net</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: solde >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(solde)}</div>
@@ -73,7 +92,9 @@ export default function ComptabilitePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
         <div className="card">
-          <h3 style={{ marginBottom: 16, fontSize: 15 }}>📊 Recettes par catégorie</h3>
+          <h3 style={{ marginBottom: 16, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PieIcon size={18} /> Recettes par catégorie
+          </h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={pieRecettes} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
@@ -84,7 +105,9 @@ export default function ComptabilitePage() {
           </ResponsiveContainer>
         </div>
         <div className="card">
-          <h3 style={{ marginBottom: 16, fontSize: 15 }}>📊 Dépenses par catégorie</h3>
+          <h3 style={{ marginBottom: 16, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PieIcon size={18} /> Dépenses par catégorie
+          </h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={pieDepenses} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
@@ -98,22 +121,26 @@ export default function ComptabilitePage() {
 
       <div className="card">
         <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-          <select style={{ width: 'auto', minWidth: 180 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
-            <option value="">Toutes les transactions</option>
-            <option value="recette">Recettes uniquement</option>
-            <option value="depense">Dépenses uniquement</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Filter size={16} color="#64748b" />
+            <select style={{ width: 'auto', minWidth: 180 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+              <option value="">Toutes les transactions</option>
+              <option value="recette">Recettes uniquement</option>
+              <option value="depense">Dépenses uniquement</option>
+            </select>
+          </div>
         </div>
-        <table>
+        <div className="table-responsive">
+          <table>
           <thead>
             <tr><th>Référence</th><th>Date</th><th>Type</th><th>Catégorie</th><th>Description</th><th>Montant</th></tr>
           </thead>
           <tbody>
             {filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(t => (
               <tr key={t.id}>
-                <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{t.ref}</td>
+                <td style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600 }}>{t.ref}</td>
                 <td>{t.date}</td>
-                <td><span className={`badge ${t.type === 'recette' ? 'badge-success' : 'badge-danger'}`}>{t.type === 'recette' ? '📈 Recette' : '📉 Dépense'}</span></td>
+                <td><span className={`badge ${t.type === 'recette' ? 'badge-success' : 'badge-danger'}`}>{t.type === 'recette' ? 'Recette' : 'Dépense'}</span></td>
                 <td>{t.categorie}</td>
                 <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t.description}</td>
                 <td style={{ fontWeight: 700, color: t.type === 'recette' ? 'var(--success)' : 'var(--danger)' }}>{t.type === 'depense' ? '–' : '+'}{fmt(t.montant)}</td>
@@ -121,6 +148,7 @@ export default function ComptabilitePage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showModal && (
@@ -128,15 +156,15 @@ export default function ComptabilitePage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 style={{ fontSize: 20 }}>Nouvelle transaction</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: 20 }}>✕</button>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>✕</button>
             </div>
             <div className="modal-body">
               <div className="form-row">
                 <div className="form-group">
                   <label>Type</label>
                   <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, categorie: '' })}>
-                    <option value="recette">📈 Recette</option>
-                    <option value="depense">📉 Dépense</option>
+                    <option value="recette">Recette</option>
+                    <option value="depense">Dépense</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -163,7 +191,9 @@ export default function ComptabilitePage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setShowModal(false)}>Annuler</button>
-              <button className="btn btn-primary" onClick={handleSubmit}>✅ Enregistrer</button>
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                <Plus size={16} /> Enregistrer
+              </button>
             </div>
           </div>
         </div>

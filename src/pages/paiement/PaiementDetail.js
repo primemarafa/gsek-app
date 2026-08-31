@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
+import { ArrowLeft, Printer } from 'lucide-react';
 import './Receipt.css';
 
 const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
@@ -21,13 +22,17 @@ export default function PaiementDetail() {
     <div className="page-container">
       <div className="page-header no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button className="btn btn-outline" onClick={() => navigate('/paiement')}>← Retour</button>
+          <button className="btn btn-outline" onClick={() => navigate('/paiement')}>
+            <ArrowLeft size={16} /> Retour
+          </button>
           <div>
             <h1 className="page-title">Reçu {p.ref}</h1>
             <p className="page-subtitle">{p.eleveNom} · {p.datePaiement}</p>
           </div>
         </div>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨 Imprimer le reçu</button>
+        <button className="btn btn-secondary" onClick={handlePrint}>
+          <Printer size={16} /> Imprimer le reçu
+        </button>
       </div>
 
       <div ref={printRef} className="receipt-wrapper">

@@ -1,12 +1,27 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import {
+  Users,
+  UserCheck,
+  GraduationCap,
+  Coins,
+  UserPlus,
+  Search,
+  Pencil,
+  Trash2,
+  X
+} from 'lucide-react';
 
 const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
 
 export default function PersonnelPage() {
   const { personnel, addPersonnel, updatePersonnel, deletePersonnel } = useApp();
+  const toast = useToast();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ nom: '', prenom: '', role: 'Enseignant', matiere: '', salaire: '', dateEmbauche: '', tel: '', email: '', statut: 'actif', contrat: 'CDI' });
 
@@ -26,67 +41,104 @@ export default function PersonnelPage() {
   };
 
   const handleSubmit = () => {
-    if (!form.nom || !form.prenom) return alert('Nom et prénom requis');
+    if (!form.nom || !form.prenom) {
+      return toast.error('Le nom et le prénom sont obligatoires.');
+    }
     if (editing) {
       updatePersonnel(editing, { ...form, salaire: parseFloat(form.salaire) || 0 });
+      toast.success(`Informations de ${form.nom} ${form.prenom} mises à jour.`);
     } else {
-      addPersonnel({ ...form, salaire: parseFloat(form.salaire) || 0 });
+      const p = addPersonnel({ ...form, salaire: parseFloat(form.salaire) || 0 });
+      toast.success(`Membre du personnel ${p.nom} ${p.prenom} (${p.matricule}) ajouté.`);
     }
     setShowModal(false);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deletePersonnel(deleteTarget.id);
+      toast.info(`Membre ${deleteTarget.nom} ${deleteTarget.prenom} supprimé.`);
+      setDeleteTarget(null);
+    }
   };
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">👨‍🏫 Gestion du Personnel</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Users size={28} /> Gestion du Personnel
+          </h1>
           <p className="page-subtitle">{personnel.length} membre{personnel.length > 1 ? 's' : ''} · Masse salariale : {fmt(masseSalariale)}/mois</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>➕ Ajouter un membre</button>
+        <button className="btn btn-primary" onClick={openCreate}>
+          <UserPlus size={17} /> Ajouter un membre
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard icon="👥" label="Total personnel" value={personnel.length} color="blue" />
-        <StatCard icon="✅" label="Actifs" value={personnel.filter(p => p.statut === 'actif').length} color="green" />
-        <StatCard icon="🏫" label="Enseignants" value={personnel.filter(p => p.role === 'Enseignant' || p.role === 'Enseignante').length} color="gold" />
-        <StatCard icon="💰" label="Masse salariale" value={fmt(masseSalariale)} color="red" small />
+        <StatCard icon={<Users size={24} />} label="Total personnel" value={personnel.length} color="blue" />
+        <StatCard icon={<UserCheck size={24} />} label="Actifs" value={personnel.filter(p => p.statut === 'actif').length} color="green" />
+        <StatCard icon={<GraduationCap size={24} />} label="Enseignants" value={personnel.filter(p => p.role === 'Enseignant' || p.role === 'Enseignante').length} color="gold" />
+        <StatCard icon={<Coins size={24} />} label="Masse salariale" value={fmt(masseSalariale)} color="red" small />
       </div>
 
       <div className="card">
         <div className="search-bar" style={{ marginBottom: 20 }}>
-          <span>🔍</span>
+          <Search size={17} color="#94a3b8" />
           <input placeholder="Rechercher par nom, rôle..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
 
         {filtered.length === 0 ? (
-          <div className="empty-state"><div className="icon">👨‍🏫</div><h3>Aucun membre</h3></div>
+          <div className="empty-state">
+            <div className="icon"><Users size={44} /></div>
+            <h3>Aucun membre</h3>
+            <p>Ajoutez un membre du personnel pour commencer.</p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Matricule</th><th>Nom & Prénom</th><th>Rôle</th><th>Matière</th><th>Salaire</th><th>Contrat</th><th>Statut</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => (
-                <tr key={p.id}>
-                  <td><span style={{ fontFamily: 'monospace', fontSize: 12, background: '#eef2f9', padding: '3px 8px', borderRadius: 4 }}>{p.matricule}</span></td>
-                  <td><div style={{ fontWeight: 600 }}>{p.nom} {p.prenom}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.email}</div></td>
-                  <td>{p.role}</td>
-                  <td>{p.matiere || '—'}</td>
-                  <td style={{ fontWeight: 600 }}>{p.salaire ? fmt(p.salaire) : '—'}</td>
-                  <td><span className="badge badge-info">{p.contrat}</span></td>
-                  <td><span className={`badge ${p.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{p.statut}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => openEdit(p)}>✏️ Modifier</button>
-                      <button className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => { if (window.confirm('Supprimer ?')) deletePersonnel(p.id); }}>🗑</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr><th>Matricule</th><th>Nom & Prénom</th><th>Rôle</th><th>Matière</th><th>Salaire</th><th>Contrat</th><th>Statut</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => (
+                  <tr key={p.id}>
+                    <td><span style={{ fontFamily: 'monospace', fontSize: 12, background: '#eef2f9', padding: '3px 8px', borderRadius: 4, fontWeight: 600 }}>{p.matricule}</span></td>
+                    <td><div style={{ fontWeight: 600 }}>{p.nom} {p.prenom}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.email}</div></td>
+                    <td>{p.role}</td>
+                    <td>{p.matiere || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{p.salaire ? fmt(p.salaire) : '—'}</td>
+                    <td><span className="badge badge-info">{p.contrat}</span></td>
+                    <td><span className={`badge ${p.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{p.statut}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => openEdit(p)} title="Modifier">
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn btn-danger" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => setDeleteTarget(p)} title="Supprimer">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer un membre"
+        message={deleteTarget ? `Êtes-vous sûr de vouloir supprimer ${deleteTarget.nom} ${deleteTarget.prenom} (${deleteTarget.role}) ?` : ''}
+        confirmText="Oui, supprimer"
+        cancelText="Annuler"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
