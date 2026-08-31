@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  Receipt,
+  Plus,
+  Search,
+  Printer,
+  X
+} from 'lucide-react';
 
 const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
 
 export default function PaiementPage() {
-  const { paiements, eleves, addPaiement } = useApp();
+  const { paiements, eleves, addPaiement, parametres } = useApp();
+  const toast = useToast();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -17,10 +26,31 @@ export default function PaiementPage() {
 
   const totalRecettes = paiements.reduce((s, p) => s + (p.montant || 0), 0);
 
+  const openNewPayment = () => {
+    setForm({
+      eleveId: '',
+      type: 'mensualite',
+      montant: parametres?.fraisMensualite || '',
+      mois: '',
+      modePaiement: 'especes',
+      remarques: ''
+    });
+    setShowModal(true);
+  };
+
+  const handleTypeChange = (type) => {
+    const defaultMontant = type === 'inscription'
+      ? (parametres?.fraisInscription || '')
+      : (parametres?.fraisMensualite || '');
+    setForm(prev => ({ ...prev, type, montant: defaultMontant }));
+  };
+
   const handleSubmit = () => {
-    if (!form.eleveId || !form.montant) return alert('Élève et montant requis');
+    if (!form.eleveId || !form.montant) {
+      return toast.error('Veuillez sélectionner un élève et indiquer le montant.');
+    }
     const eleve = eleves.find(e => e.id === form.eleveId);
-    addPaiement({
+    const newP = addPaiement({
       ...form,
       montant: parseFloat(form.montant),
       eleveId: eleve.id,
@@ -28,55 +58,63 @@ export default function PaiementPage() {
       eleveClasse: eleve.classe,
       eleveMatricule: eleve.matricule,
     });
+    toast.success(`Paiement enregistré ! Reçu N° ${newP.ref} généré.`);
     setShowModal(false);
-    setForm({ eleveId: '', type: 'mensualite', montant: '', mois: '', modePaiement: 'especes', remarques: '' });
   };
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">🧾 Reçus de Paiement</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Receipt size={28} /> Reçus de Paiement
+          </h1>
           <p className="page-subtitle">Total encaissé : <strong>{fmt(totalRecettes)}</strong></p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>➕ Nouveau reçu</button>
+        <button className="btn btn-primary" onClick={openNewPayment}>
+          <Plus size={17} /> Nouveau reçu
+        </button>
       </div>
 
       <div className="card">
         <div className="search-bar" style={{ marginBottom: 20 }}>
-          <span>🔍</span>
+          <Search size={17} color="#94a3b8" />
           <input placeholder="Rechercher par élève ou référence..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
 
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="icon">🧾</div>
+            <div className="icon"><Receipt size={44} /></div>
             <h3>Aucun reçu enregistré</h3>
             <p>Créez le premier reçu de paiement.</p>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Référence</th><th>Élève</th><th>Classe</th><th>Type</th><th>Mois</th><th>Montant</th><th>Mode</th><th>Date</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => (
-                <tr key={p.id}>
-                  <td><span style={{ fontFamily: 'monospace', fontSize: 12, background: '#eef2f9', padding: '3px 8px', borderRadius: 4 }}>{p.ref}</span></td>
-                  <td style={{ fontWeight: 600 }}>{p.eleveNom}</td>
-                  <td>{p.eleveClasse}</td>
-                  <td><span className={`badge ${p.type === 'inscription' ? 'badge-info' : 'badge-gold'}`}>{p.type === 'inscription' ? 'Inscription' : 'Mensualité'}</span></td>
-                  <td>{p.mois || '—'}</td>
-                  <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fmt(p.montant)}</td>
-                  <td>{p.modePaiement}</td>
-                  <td>{p.datePaiement}</td>
-                  <td>
-                    <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate(`/paiement/${p.id}`)}>🖨 Reçu</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr><th>Référence</th><th>Élève</th><th>Classe</th><th>Type</th><th>Mois</th><th>Montant</th><th>Mode</th><th>Date</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => (
+                  <tr key={p.id}>
+                    <td><span style={{ fontFamily: 'monospace', fontSize: 12, background: '#eef2f9', padding: '3px 8px', borderRadius: 4, fontWeight: 600 }}>{p.ref}</span></td>
+                    <td style={{ fontWeight: 600 }}>{p.eleveNom}</td>
+                    <td>{p.eleveClasse}</td>
+                    <td><span className={`badge ${p.type === 'inscription' ? 'badge-info' : 'badge-gold'}`}>{p.type === 'inscription' ? 'Inscription' : 'Mensualité'}</span></td>
+                    <td>{p.mois || '—'}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fmt(p.montant)}</td>
+                    <td>{p.modePaiement}</td>
+                    <td>{p.datePaiement}</td>
+                    <td>
+                      <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate(`/paiement/${p.id}`)}>
+                        <Printer size={14} /> Reçu
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -98,7 +136,7 @@ export default function PaiementPage() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Type de paiement</label>
-                  <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                  <select value={form.type} onChange={e => handleTypeChange(e.target.value)}>
                     <option value="inscription">Frais d'inscription</option>
                     <option value="mensualite">Mensualité</option>
                   </select>
@@ -133,7 +171,9 @@ export default function PaiementPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setShowModal(false)}>Annuler</button>
-              <button className="btn btn-primary" onClick={handleSubmit}>✅ Enregistrer et générer le reçu</button>
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                <Receipt size={16} /> Enregistrer et générer le reçu
+              </button>
             </div>
           </div>
         </div>

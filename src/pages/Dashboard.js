@@ -2,6 +2,15 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  GraduationCap,
+  Users,
+  Wallet,
+  Receipt,
+  Calendar,
+  FileText,
+  Plus
+} from 'lucide-react';
 
 const chartData = [
   { mois: 'Sep', recettes: 2100000, depenses: 1200000 },
@@ -15,7 +24,7 @@ const chartData = [
 const fmt = (n) => new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n);
 
 export default function Dashboard() {
-  const { eleves, personnel, paiements, transactions } = useApp();
+  const { eleves, personnel, paiements, transactions, parametres } = useApp();
   const navigate = useNavigate();
 
   const totalRecettes = transactions.filter(t => t.type === 'recette').reduce((s, t) => s + t.montant, 0);
@@ -31,16 +40,17 @@ export default function Dashboard() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Tableau de bord</h1>
-          <p className="page-subtitle">Groupe Scolaire d'Excellence Sidy Konaté — Année 2024-2025</p>
+          <p className="page-subtitle">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"} — Année {parametres?.anneeScolaire || "2024-2025"}</p>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          📅 {new Date().toLocaleDateString('fr-SN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', background: 'white', padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <Calendar size={16} />
+          <span>{new Date().toLocaleDateString('fr-SN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
 
       <div className="dash-stats">
         <div className="stat-card" onClick={() => navigate('/eleves')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon blue">🎒</div>
+          <div className="stat-icon blue"><GraduationCap size={26} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Élèves inscrits</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>{elevesActifs}</div>
@@ -48,15 +58,15 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="stat-card" onClick={() => navigate('/personnel')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon gold">👨‍🏫</div>
+          <div className="stat-icon gold"><Users size={26} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Personnel</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>{personnelActif}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Membres actifs</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon green">💰</div>
+        <div className="stat-card" onClick={() => navigate('/comptabilite')} style={{ cursor: 'pointer' }}>
+          <div className="stat-icon green"><Wallet size={26} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Solde général</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: solde >= 0 ? 'var(--success)' : 'var(--danger)' }}>
@@ -66,7 +76,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="stat-card" onClick={() => navigate('/paiement')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon red">🧾</div>
+          <div className="stat-icon red"><Receipt size={26} /></div>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Reçus émis</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>{paiements.length}</div>
@@ -133,10 +143,18 @@ export default function Dashboard() {
       <div className="dash-quick-actions card" style={{ marginTop: 24 }}>
         <h3 style={{ marginBottom: 16 }}>⚡ Actions rapides</h3>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => navigate('/eleves')}>➕ Inscrire un élève</button>
-          <button className="btn btn-secondary" onClick={() => navigate('/paiement')}>🧾 Nouveau reçu</button>
-          <button className="btn btn-outline" onClick={() => navigate('/bulletin')}>📋 Saisir les notes</button>
-          <button className="btn btn-outline" onClick={() => navigate('/comptabilite')}>💰 Ajouter transaction</button>
+          <button className="btn btn-primary" onClick={() => navigate('/eleves')}>
+            <Plus size={16} /> Inscrire un élève
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/paiement')}>
+            <Receipt size={16} /> Nouveau reçu
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate('/bulletin')}>
+            <FileText size={16} /> Saisir les notes
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate('/comptabilite')}>
+            <Wallet size={16} /> Ajouter transaction
+          </button>
         </div>
       </div>
     </div>

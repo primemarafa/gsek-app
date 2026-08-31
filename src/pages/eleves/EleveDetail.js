@@ -2,11 +2,12 @@ import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
+import { ArrowLeft, Printer, GraduationCap } from 'lucide-react';
 
 export default function EleveDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { eleves, paiements, bulletins } = useApp();
+  const { eleves, paiements, bulletins, parametres } = useApp();
   const printRef = useRef();
 
   const eleve = eleves.find(e => e.id === id);
@@ -19,19 +20,23 @@ export default function EleveDetail() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button className="btn btn-outline" onClick={() => navigate('/eleves')}>← Retour</button>
+          <button className="btn btn-outline" onClick={() => navigate('/eleves')}>
+            <ArrowLeft size={16} /> Retour
+          </button>
           <div>
             <h1 className="page-title">{eleve.prenom} {eleve.nom}</h1>
             <p className="page-subtitle">{eleve.matricule} · {eleve.classe}</p>
           </div>
         </div>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨 Imprimer la fiche</button>
+        <button className="btn btn-secondary" onClick={handlePrint}>
+          <Printer size={16} /> Imprimer la fiche
+        </button>
       </div>
 
       <div ref={printRef} className="print-eleve-card" style={{ padding: 20 }}>
-        <PrintHeader />
+        <PrintHeader parametres={parametres} />
         <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: '2px solid var(--primary)' }}>
           <h2 style={{ fontSize: 22 }}>FICHE DE L'ÉLÈVE</h2>
         </div>
@@ -89,13 +94,17 @@ export default function EleveDetail() {
   );
 }
 
-function PrintHeader() {
+function PrintHeader({ parametres }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '16px 0', marginBottom: 20, borderBottom: '3px solid var(--primary)' }}>
       <div style={{ width: 70, height: 70, background: 'var(--primary)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 30, fontWeight: 700 }}>✦</div>
       <div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'Playfair Display, serif' }}>GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ</div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Excellence · Discipline · Réussite — Dakar, Sénégal</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'Playfair Display, serif' }}>
+          {parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          {parametres?.devise || "Excellence · Discipline · Réussite"} — {parametres?.adresse || "Dakar, Sénégal"}
+        </div>
       </div>
     </div>
   );

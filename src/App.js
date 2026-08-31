@@ -12,13 +12,15 @@ import PaiementPage from './pages/paiement/PaiementPage';
 import PaiementDetail from './pages/paiement/PaiementDetail';
 import ParametresPage from './pages/parametres/ParametresPage';
 import { AppProvider } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 import './App.css';
 
 function App() {
   return (
     <AppProvider>
-      <Router>
-        <Layout>
+      <ToastProvider>
+        <Router>
+          <Layout>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -33,7 +35,8 @@ function App() {
             <Route path="/parametres" element={<ParametresPage />} />
           </Routes>
         </Layout>
-      </Router>
+        </Router>
+      </ToastProvider>
     </AppProvider>
   );
 }
