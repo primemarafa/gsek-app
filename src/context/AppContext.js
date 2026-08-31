@@ -62,6 +62,18 @@ const MATIERES = ['Mathématiques', 'Français', 'Sciences', 'Histoire-Géograph
 const ANNEES = ['2023-2024', '2024-2025', '2025-2026'];
 const TRIMESTRES = ['1er Trimestre', '2ème Trimestre', '3ème Trimestre'];
 
+const defaultParametres = {
+  nom: "Groupe Scolaire d'Excellence Sidy Konaté",
+  adresse: 'Dakar, Sénégal',
+  telephone: '+221 33 000 00 00',
+  email: 'contact@gsek.sn',
+  siteWeb: 'www.gsek.sn',
+  devise: 'Excellence · Discipline · Réussite',
+  anneeScolaire: '2024-2025',
+  fraisInscription: 75000,
+  fraisMensualite: 35000,
+};
+
 export const AppProvider = ({ children }) => {
   const [eleves, setEleves] = useState(() => {
     const saved = localStorage.getItem('gsek_eleves');
@@ -83,16 +95,35 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('gsek_transactions');
     return saved ? JSON.parse(saved) : initialTransactions;
   });
+  const [parametres, setParametres] = useState(() => {
+    const saved = localStorage.getItem('gsek_parametres');
+    return saved ? JSON.parse(saved) : defaultParametres;
+  });
 
   useEffect(() => { localStorage.setItem('gsek_eleves', JSON.stringify(eleves)); }, [eleves]);
   useEffect(() => { localStorage.setItem('gsek_personnel', JSON.stringify(personnel)); }, [personnel]);
   useEffect(() => { localStorage.setItem('gsek_paiements', JSON.stringify(paiements)); }, [paiements]);
   useEffect(() => { localStorage.setItem('gsek_bulletins', JSON.stringify(bulletins)); }, [bulletins]);
   useEffect(() => { localStorage.setItem('gsek_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem('gsek_parametres', JSON.stringify(parametres)); }, [parametres]);
+
+  const updateParametres = (data) => {
+    setParametres(prev => ({ ...prev, ...data }));
+  };
 
   const addEleve = (data) => {
-    const index = eleves.length + 1;
-    const newEleve = { ...data, id: uuidv4(), matricule: generateMatricule(new Date().getFullYear(), index) };
+    const yr = new Date().getFullYear();
+    const regex = new RegExp(`^GSEK-${yr}-(\\d+)$`);
+    let maxNum = 0;
+    eleves.forEach(e => {
+      const match = e.matricule && e.matricule.match(regex);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    });
+    const nextIndex = maxNum + 1;
+    const newEleve = { ...data, id: uuidv4(), matricule: generateMatricule(yr, nextIndex) };
     setEleves(prev => [...prev, newEleve]);
     return newEleve;
   };
@@ -100,8 +131,16 @@ export const AppProvider = ({ children }) => {
   const deleteEleve = (id) => setEleves(prev => prev.filter(e => e.id !== id));
 
   const addPersonnel = (data) => {
-    const index = personnel.length + 1;
-    const newP = { ...data, id: uuidv4(), matricule: `PERS-${String(index).padStart(3,'0')}` };
+    let maxNum = 0;
+    personnel.forEach(p => {
+      const match = p.matricule && p.matricule.match(/^PERS-(\d+)$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    });
+    const nextIndex = maxNum + 1;
+    const newP = { ...data, id: uuidv4(), matricule: `PERS-${String(nextIndex).padStart(3, '0')}` };
     setPersonnel(prev => [...prev, newP]);
     return newP;
   };
@@ -109,11 +148,29 @@ export const AppProvider = ({ children }) => {
   const deletePersonnel = (id) => setPersonnel(prev => prev.filter(p => p.id !== id));
 
   const addPaiement = (data) => {
-    const index = paiements.length + 1;
-    const ref = `RECU-${new Date().getFullYear()}-${String(index).padStart(4,'0')}`;
+    const yr = new Date().getFullYear();
+    const regex = new RegExp(`^RECU-${yr}-(\\d+)$`);
+    let maxNum = 0;
+    paiements.forEach(p => {
+      const match = p.ref && p.ref.match(regex);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    });
+    const nextIndex = maxNum + 1;
+    const ref = `RECU-${yr}-${String(nextIndex).padStart(4, '0')}`;
     const newP = { ...data, id: uuidv4(), ref, datePaiement: new Date().toISOString().split('T')[0] };
     setPaiements(prev => [...prev, newP]);
-    const recette = { id: uuidv4(), date: newP.datePaiement, type: 'recette', categorie: data.type === 'inscription' ? 'Inscriptions' : 'Mensualités', montant: data.montant, description: `${ref} — ${data.eleveNom}`, ref };
+    const recette = {
+      id: uuidv4(),
+      date: newP.datePaiement,
+      type: 'recette',
+      categorie: data.type === 'inscription' ? 'Inscriptions' : 'Mensualités',
+      montant: data.montant,
+      description: `${ref} — ${data.eleveNom}`,
+      ref
+    };
     setTransactions(prev => [...prev, recette]);
     return newP;
   };
@@ -126,20 +183,67 @@ export const AppProvider = ({ children }) => {
   const updateBulletin = (id, data) => setBulletins(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
 
   const addTransaction = (data) => {
-    const index = transactions.length + 1;
-    const newT = { ...data, id: uuidv4(), ref: `TRX-${String(index).padStart(4,'0')}` };
+    let maxNum = 0;
+    transactions.forEach(t => {
+      const match = t.ref && t.ref.match(/^TRX-(\d+)$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    });
+    const nextIndex = maxNum + 1;
+    const newT = { ...data, id: uuidv4(), ref: `TRX-${String(nextIndex).padStart(4, '0')}` };
     setTransactions(prev => [...prev, newT]);
     return newT;
   };
 
+  const exportData = () => {
+    const backup = {
+      version: '1.0.0',
+      dateExport: new Date().toISOString(),
+      parametres,
+      eleves,
+      personnel,
+      paiements,
+      bulletins,
+      transactions
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadAnchor.setAttribute('download', `gsek_sauvegarde_${dateStr}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const importData = (jsonData) => {
+    try {
+      const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      if (data.eleves && Array.isArray(data.eleves)) setEleves(data.eleves);
+      if (data.personnel && Array.isArray(data.personnel)) setPersonnel(data.personnel);
+      if (data.paiements && Array.isArray(data.paiements)) setPaiements(data.paiements);
+      if (data.bulletins && Array.isArray(data.bulletins)) setBulletins(data.bulletins);
+      if (data.transactions && Array.isArray(data.transactions)) setTransactions(data.transactions);
+      if (data.parametres && typeof data.parametres === 'object') setParametres(data.parametres);
+      return { success: true };
+    } catch (err) {
+      console.error('Erreur lors de la restauration :', err);
+      return { success: false, error: err.message };
+    }
+  };
+
   return (
     <AppContext.Provider value={{
-      eleves, personnel, paiements, bulletins, transactions,
+      eleves, personnel, paiements, bulletins, transactions, parametres,
       addEleve, updateEleve, deleteEleve,
       addPersonnel, updatePersonnel, deletePersonnel,
       addPaiement,
       addBulletin, updateBulletin,
       addTransaction,
+      updateParametres,
+      exportData, importData,
       CLASSES, MATIERES, ANNEES, TRIMESTRES
     }}>
       {children}

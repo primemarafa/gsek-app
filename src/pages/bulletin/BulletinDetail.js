@@ -7,7 +7,7 @@ import './BulletinPrint.css';
 export default function BulletinDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { bulletins, eleves } = useApp();
+  const { bulletins, eleves, parametres } = useApp();
   const printRef = useRef();
 
   const bulletin = bulletins.find(b => b.id === id);
@@ -46,9 +46,9 @@ export default function BulletinDetail() {
         <div className="bulletin-header">
           <div className="bulletin-logo">✦</div>
           <div className="bulletin-school-info">
-            <div className="bulletin-school-name">GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ</div>
-            <div className="bulletin-school-sub">Excellence · Discipline · Réussite</div>
-            <div className="bulletin-school-sub">Dakar, Sénégal · Tel: +221 33 000 00 00</div>
+            <div className="bulletin-school-name">{parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}</div>
+            <div className="bulletin-school-sub">{parametres?.devise || 'Excellence · Discipline · Réussite'}</div>
+            <div className="bulletin-school-sub">{parametres?.adresse || 'Dakar, Sénégal'} {parametres?.telephone ? `· Tél : ${parametres.telephone}` : ''}</div>
           </div>
           <div className="bulletin-badge-wrapper">
             <div className="bulletin-year-badge">{bulletin.annee}</div>
