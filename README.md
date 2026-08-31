@@ -28,7 +28,7 @@ Application web complète de gestion scolaire développée en React.
 
 ```bash
 # Cloner le projet
-git clone https://github.com/votre-username/gsek-app.git
+git clone https://github.com/primemarafa/gsek-app.git
 cd gsek-app
 
 # Installer les dépendances

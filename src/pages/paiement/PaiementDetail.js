@@ -9,7 +9,7 @@ const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
 export default function PaiementDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { paiements } = useApp();
+  const { paiements, parametres } = useApp();
   const printRef = useRef();
 
   const p = paiements.find(x => x.id === id);
@@ -36,9 +36,9 @@ export default function PaiementDetail() {
             <div className="receipt-logo-block">
               <div className="receipt-logo">✦</div>
               <div>
-                <div className="receipt-school-name">GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ</div>
-                <div className="receipt-school-sub">Excellence · Discipline · Réussite · Dakar, Sénégal</div>
-                <div className="receipt-school-sub">Tél : +221 33 000 00 00</div>
+                <div className="receipt-school-name">{parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}</div>
+                <div className="receipt-school-sub">{parametres?.devise || 'Excellence · Discipline · Réussite'} · {parametres?.adresse || 'Dakar, Sénégal'}</div>
+                <div className="receipt-school-sub">Tél : {parametres?.telephone || '+221 33 000 00 00'}</div>
               </div>
             </div>
             <div className="receipt-ref-badge">
