@@ -181,6 +181,15 @@ export const AppProvider = ({ children }) => {
     return newB;
   };
   const updateBulletin = (id, data) => setBulletins(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
+  const deleteBulletin = (id) => setBulletins(prev => prev.filter(b => b.id !== id));
+
+  const deletePaiement = (id) => {
+    const target = paiements.find(p => p.id === id);
+    if (target && target.ref) {
+      setTransactions(prev => prev.filter(t => t.ref !== target.ref));
+    }
+    setPaiements(prev => prev.filter(p => p.id !== id));
+  };
 
   const addTransaction = (data) => {
     let maxNum = 0;
@@ -196,6 +205,7 @@ export const AppProvider = ({ children }) => {
     setTransactions(prev => [...prev, newT]);
     return newT;
   };
+  const deleteTransaction = (id) => setTransactions(prev => prev.filter(t => t.id !== id));
 
   const exportData = () => {
     const backup = {
@@ -239,9 +249,9 @@ export const AppProvider = ({ children }) => {
       eleves, personnel, paiements, bulletins, transactions, parametres,
       addEleve, updateEleve, deleteEleve,
       addPersonnel, updatePersonnel, deletePersonnel,
-      addPaiement,
-      addBulletin, updateBulletin,
-      addTransaction,
+      addPaiement, deletePaiement,
+      addBulletin, updateBulletin, deleteBulletin,
+      addTransaction, deleteTransaction,
       updateParametres,
       exportData, importData,
       CLASSES, MATIERES, ANNEES, TRIMESTRES

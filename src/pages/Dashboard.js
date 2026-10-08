@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -12,20 +12,45 @@ import {
   Plus
 } from 'lucide-react';
 
-const chartData = [
-  { mois: 'Sep', recettes: 2100000, depenses: 1200000 },
-  { mois: 'Oct', recettes: 1850000, depenses: 980000 },
-  { mois: 'Nov', recettes: 1600000, depenses: 1050000 },
-  { mois: 'Dec', recettes: 900000, depenses: 850000 },
-  { mois: 'Jan', recettes: 2000000, depenses: 1100000 },
-  { mois: 'Fev', recettes: 1750000, depenses: 990000 },
-];
-
 const fmt = (n) => new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n);
 
 export default function Dashboard() {
-  const { eleves, personnel, paiements, transactions, parametres } = useApp();
+  const { eleves, personnel, paiements, transactions, parametres, CLASSES } = useApp();
   const navigate = useNavigate();
+
+  // Calcul dynamique des recettes et dépenses par mois selon l'année scolaire
+  const chartData = useMemo(() => {
+    const moisScolaires = [
+      { key: '09', label: 'Sep' },
+      { key: '10', label: 'Oct' },
+      { key: '11', label: 'Nov' },
+      { key: '12', label: 'Déc' },
+      { key: '01', label: 'Jan' },
+      { key: '02', label: 'Fév' },
+      { key: '03', label: 'Mar' },
+      { key: '04', label: 'Avr' },
+      { key: '05', label: 'Mai' },
+      { key: '06', label: 'Juin' },
+    ];
+
+    return moisScolaires.map(m => {
+      const txMois = transactions.filter(t => {
+        if (!t.date) return false;
+        const parts = t.date.split('-');
+        return parts[1] === m.key;
+      });
+
+      const rec = txMois
+        .filter(t => t.type === 'recette')
+        .reduce((sum, t) => sum + (Number(t.montant) || 0), 0);
+
+      const dep = txMois
+        .filter(t => t.type === 'depense')
+        .reduce((sum, t) => sum + (Number(t.montant) || 0), 0);
+
+      return { mois: m.label, recettes: rec, depenses: dep };
+    });
+  }, [transactions]);
 
   const totalRecettes = transactions.filter(t => t.type === 'recette').reduce((s, t) => s + t.montant, 0);
   const totalDepenses = transactions.filter(t => t.type === 'depense').reduce((s, t) => s + t.montant, 0);
@@ -34,6 +59,17 @@ export default function Dashboard() {
   const elevesActifs = eleves.filter(e => e.statut === 'actif').length;
   const personnelActif = personnel.filter(p => p.statut === 'actif').length;
   const paiementsRecents = [...paiements].sort((a, b) => new Date(b.datePaiement) - new Date(a.datePaiement)).slice(0, 5);
+
+  // Répartition dynamique des classes ayant des élèves (ou top 5 des classes)
+  const classesAffichees = useMemo(() => {
+    const classesCount = (CLASSES || []).map(cls => ({
+      nom: cls,
+      count: eleves.filter(e => e.classe === cls).length
+    }));
+    // Trier par nombre d'élèves décroissant
+    classesCount.sort((a, b) => b.count - a.count);
+    return classesCount.slice(0, 5);
+  }, [CLASSES, eleves]);
 
   return (
     <div className="page-container">
@@ -101,13 +137,13 @@ export default function Dashboard() {
 
         <div className="card">
           <h3 style={{ marginBottom: 16 }}>🎒 Répartition par classe</h3>
-          {['6ème A', '5ème B', '4ème A', 'CM2', 'CM1'].map(cls => {
-            const count = eleves.filter(e => e.classe === cls).length;
+          {classesAffichees.map(item => {
+            const count = item.count;
             const pct = elevesActifs ? Math.round((count / elevesActifs) * 100) : 0;
             return (
-              <div key={cls} style={{ marginBottom: 12 }}>
+              <div key={item.nom} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                  <span>{cls}</span><span style={{ fontWeight: 600 }}>{count} élève{count > 1 ? 's' : ''}</span>
+                  <span>{item.nom}</span><span style={{ fontWeight: 600 }}>{count} élève{count > 1 ? 's' : ''}</span>
                 </div>
                 <div style={{ background: '#eef2f9', borderRadius: 4, height: 8 }}>
                   <div style={{ width: `${pct || 0}%`, background: 'var(--primary)', height: '100%', borderRadius: 4, transition: 'width 0.6s' }} />
