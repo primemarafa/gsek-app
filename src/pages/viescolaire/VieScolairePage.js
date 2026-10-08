@@ -16,13 +16,15 @@ import {
   Download,
   Calendar,
   Search,
+  MessageSquare,
   X
 } from 'lucide-react';
+import { getWhatsAppAlerteAbsenceLink } from '../../utils/whatsapp';
 
 const PAGE_SIZE = 10;
 
 export default function VieScolairePage() {
-  const { eleves, absences, addAbsence, deleteAbsence, CLASSES } = useApp();
+  const { eleves, absences, addAbsence, deleteAbsence, parametres, CLASSES } = useApp();
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState('pointage'); // 'pointage' | 'registre'
@@ -134,6 +136,25 @@ export default function VieScolairePage() {
       toast.info(`L'enregistrement d'absence pour ${deleteTarget.eleveNom} a été supprimé.`);
       setDeleteTarget(null);
     }
+  };
+
+  const handleWhatsAppAlert = (eleve, incident) => {
+    if (!eleve?.parentTel) {
+      toast.warning(`Aucun numéro de téléphone enregistré pour le parent de ${eleve?.nom || 'cet élève'}.`);
+      return;
+    }
+    const res = getWhatsAppAlerteAbsenceLink({
+      parentTel: eleve.parentTel,
+      parentNom: eleve.parentNom,
+      eleveNom: `${eleve.nom} ${eleve.prenom}`,
+      classe: eleve.classe,
+      date: incident?.date || datePointage,
+      type: incident?.type || 'injustifiee',
+      motif: incident?.motif,
+      ecoleNom: parametres?.nom
+    });
+    window.open(res.url, '_blank');
+    toast.success(`Alerte WhatsApp préparée pour les parents de ${eleve.nom} !`);
   };
 
   return (
@@ -299,6 +320,25 @@ export default function VieScolairePage() {
                               >
                                 Retard
                               </button>
+                              {incident && (
+                                <button
+                                  className="btn"
+                                  style={{
+                                    padding: '5px 8px',
+                                    fontSize: 12,
+                                    background: '#25D366',
+                                    color: 'white',
+                                    border: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                  onClick={() => handleWhatsAppAlert(eleve, incident)}
+                                  title="Alerter les parents par WhatsApp"
+                                >
+                                  <MessageSquare size={13} /> Alerter
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -370,7 +410,28 @@ export default function VieScolairePage() {
                       <td>{a.dureeHeures} h</td>
                       <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{a.motif || '—'}</td>
                       <td>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button
+                            className="btn"
+                            style={{
+                              padding: '5px 9px',
+                              fontSize: 11,
+                              background: '#25D366',
+                              color: 'white',
+                              border: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              marginRight: 6
+                            }}
+                            onClick={() => {
+                              const targetEleve = eleves.find(e => e.id === a.eleveId) || { nom: a.eleveNom, prenom: '', parentTel: '', classe: a.classe };
+                              handleWhatsAppAlert(targetEleve, a);
+                            }}
+                            title="Alerter les parents par WhatsApp"
+                          >
+                            <MessageSquare size={12} /> WhatsApp
+                          </button>
                           <button
                             className="btn btn-danger"
                             style={{ padding: '6px 10px', fontSize: 12 }}

@@ -1,13 +1,16 @@
 import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useToast } from '../../context/ToastContext';
 import { useReactToPrint } from 'react-to-print';
-import { ArrowLeft, Printer, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Printer, GraduationCap, MessageSquare, Award } from 'lucide-react';
+import { formatPhoneNumberForWhatsApp } from '../../utils/whatsapp';
 import './BulletinPrint.css';
 
 export default function BulletinDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { bulletins, eleves, parametres, absences } = useApp();
   const printRef = useRef();
 
@@ -21,6 +24,18 @@ export default function BulletinDetail() {
   const totalRetardsCount = eleveAbsences.filter(a => a.type === 'retard').length;
   const handlePrint = useReactToPrint({ content: () => printRef.current });
 
+  // Calcul dynamique du rang dans la classe pour ce trimestre
+  const classeNom = bulletin.classe || bulletin.eleveClasse || eleve?.classe;
+  const bulletinsClasse = (bulletins || []).filter(b =>
+    (b.classe === classeNom || b.eleveClasse === classeNom) &&
+    b.trimestre === bulletin.trimestre &&
+    b.annee === bulletin.annee
+  );
+  const sortedClass = [...bulletinsClasse].sort((a, b) => (parseFloat(b.moyenneGenerale) || 0) - (parseFloat(a.moyenneGenerale) || 0));
+  const myIndex = sortedClass.findIndex(b => b.id === bulletin.id);
+  const rang = myIndex >= 0 ? myIndex + 1 : (bulletin.rang || null);
+  const totalClasseEleves = sortedClass.length;
+
   const mention = (moy) => {
     const m = parseFloat(moy);
     if (m >= 16) return 'Très Bien';
@@ -28,6 +43,44 @@ export default function BulletinDetail() {
     if (m >= 12) return 'Assez Bien';
     if (m >= 10) return 'Passable';
     return 'Insuffisant';
+  };
+
+  const distinction = (moy) => {
+    const m = parseFloat(moy);
+    if (m >= 16) return 'Félicitations du Conseil';
+    if (m >= 14) return 'Encouragements & Tableau d\'Honneur';
+    if (m >= 12) return 'Tableau d\'Honneur';
+    if (m < 9) return 'Avertissement Travail';
+    return null;
+  };
+
+  const handleSendWhatsAppResults = () => {
+    const tel = eleve?.parentTel;
+    if (!tel) {
+      toast.warning(`Aucun numéro de téléphone enregistré pour le parent de ${bulletin.eleveNom}.`);
+      return;
+    }
+    const cleanPhone = formatPhoneNumberForWhatsApp(tel);
+    const rangText = rang ? ` (Rang : ${rang}${rang === 1 ? 'er' : 'ème'}/${totalClasseEleves})` : '';
+    const distText = distinction(bulletin.moyenneGenerale) ? `\n• Distinction : *${distinction(bulletin.moyenneGenerale)}*` : '';
+
+    const message =
+`🎓 *${parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}*
+Relevé de Résultats — *${bulletin.trimestre}*
+
+Bonjour ${eleve.parentNom ? `M./Mme ${eleve.parentNom}` : 'Cher Parent'},
+
+Nous vous transmettons le bilan trimestriel de votre enfant *${bulletin.eleveNom}* (Classe : ${classeNom}) :
+
+• Moyenne Générale : *${bulletin.moyenneGenerale} / 20*
+• Mention : *${mention(bulletin.moyenneGenerale)}*${rangText}${distText}
+• Assiduité : ${totalInjustifieesH}h d'absence(s), ${totalRetardsCount} retard(s)
+
+Le bulletin officiel signé est disponible auprès de la direction de l'établissement.`;
+
+    const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    toast.success("Bilan WhatsApp préparé pour le parent !");
   };
 
   const notes = bulletin.notes?.filter(n => n.note !== '') || [];
@@ -46,9 +99,27 @@ export default function BulletinDetail() {
             <p className="page-subtitle">{bulletin.trimestre} · {bulletin.annee}</p>
           </div>
         </div>
-        <button className="btn btn-secondary" onClick={handlePrint}>
-          <Printer size={16} /> Imprimer le bulletin
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            className="btn"
+            style={{
+              background: '#25D366',
+              color: 'white',
+              border: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 600
+            }}
+            onClick={handleSendWhatsAppResults}
+            title="Envoyer le relevé de notes au parent par WhatsApp"
+          >
+            <MessageSquare size={16} /> Bilan WhatsApp
+          </button>
+          <button className="btn btn-primary" onClick={handlePrint}>
+            <Printer size={16} /> Imprimer le bulletin
+          </button>
+        </div>
       </div>
 
       <div ref={printRef} className="bulletin-print">
@@ -81,7 +152,13 @@ export default function BulletinDetail() {
           </div>
           <div className="info-block">
             <span className="info-label">Classe</span>
-            <span className="info-value">{bulletin.eleveClasse}</span>
+            <span className="info-value">{bulletin.eleveClasse || classeNom}</span>
+          </div>
+          <div className="info-block">
+            <span className="info-label">Rang</span>
+            <span className="info-value" style={{ fontWeight: 700, color: rang === 1 ? '#c8960c' : 'inherit' }}>
+              {rang ? `${rang}${rang === 1 ? 'er' : 'ème'} / ${totalClasseEleves || 1}` : '—'}
+            </span>
           </div>
           <div className="info-block">
             <span className="info-label">Date</span>
@@ -127,6 +204,11 @@ export default function BulletinDetail() {
             <div className="moyenne-label">Moyenne générale</div>
             <div className="moyenne-value">{bulletin.moyenneGenerale}/20</div>
             <div className="moyenne-mention">{mention(bulletin.moyenneGenerale)}</div>
+            {distinction(bulletin.moyenneGenerale) && (
+              <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: '#c8960c', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <Award size={13} /> {distinction(bulletin.moyenneGenerale)}
+              </div>
+            )}
           </div>
           <div className="appreciation-box">
             <div className="app-label">Appréciation générale de la direction</div>
