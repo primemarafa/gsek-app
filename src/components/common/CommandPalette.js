@@ -20,7 +20,7 @@ import './CommandPalette.css';
 
 export default function CommandPalette({ isOpen, onClose }) {
   const navigate = useNavigate();
-  const { eleves, paiements, personnel } = useApp();
+  const { eleves, paiements, personnel, isRouteAllowed } = useApp();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
@@ -63,7 +63,7 @@ export default function CommandPalette({ isOpen, onClose }) {
 
   const q = query.trim().toLowerCase();
 
-  // Pages navigation
+  // Pages navigation (filtrées strictement par permissions du rôle actif)
   const pages = [
     { title: 'Tableau de bord', path: '/dashboard', icon: LayoutDashboard, category: 'Pages' },
     { title: 'Gestion des Élèves', path: '/eleves', icon: GraduationCap, category: 'Pages' },
@@ -74,10 +74,10 @@ export default function CommandPalette({ isOpen, onClose }) {
     { title: 'Comptabilité & Flux', path: '/comptabilite', icon: Wallet, category: 'Pages' },
     { title: 'Gestion du Personnel', path: '/personnel', icon: Users, category: 'Pages' },
     { title: 'Paramètres & Sauvegarde', path: '/parametres', icon: Settings, category: 'Pages' },
-  ].filter(p => !q || p.title.toLowerCase().includes(q));
+  ].filter(p => isRouteAllowed(p.path) && (!q || p.title.toLowerCase().includes(q)));
 
   // Search students
-  const studentResults = q
+  const studentResults = (isRouteAllowed('/eleves') && q)
     ? eleves
         .filter(e => (e.nom + ' ' + e.prenom + ' ' + (e.matricule || '') + ' ' + e.classe).toLowerCase().includes(q))
         .slice(0, 5)
@@ -90,8 +90,8 @@ export default function CommandPalette({ isOpen, onClose }) {
         }))
     : [];
 
-  // Search receipts
-  const receiptResults = q
+  // Search receipts (uniquement si le rôle a accès aux paiements)
+  const receiptResults = (isRouteAllowed('/paiement') && q)
     ? paiements
         .filter(p => ((p.ref || '') + ' ' + (p.eleveNom || '') + ' ' + (p.mois || '')).toLowerCase().includes(q))
         .slice(0, 4)
@@ -104,8 +104,8 @@ export default function CommandPalette({ isOpen, onClose }) {
         }))
     : [];
 
-  // Search staff
-  const staffResults = q
+  // Search staff (uniquement si le rôle a accès aux ressources humaines)
+  const staffResults = (isRouteAllowed('/personnel') && q)
     ? personnel
         .filter(p => (p.nom + ' ' + p.prenom + ' ' + p.role).toLowerCase().includes(q))
         .slice(0, 3)

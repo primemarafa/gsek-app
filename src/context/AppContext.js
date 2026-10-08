@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { api } from '../services/api';
 
 const AppContext = createContext();
 
@@ -33,6 +34,49 @@ export const ROLES = {
     allowedRoutes: ['/dashboard', '/bulletin', '/viescolaire', '/eleves']
   }
 };
+
+export const DEFAULT_USERS = [
+  {
+    id: 'u-dir',
+    nom: 'Sarr',
+    prenom: 'Abdoulaye',
+    email: 'direction@gsek.sn',
+    password: 'admin',
+    role: 'directeur',
+    titre: 'Directeur Général',
+    matricule: 'PERS-001'
+  },
+  {
+    id: 'u-cpt',
+    nom: 'Diop',
+    prenom: 'Mamadou',
+    email: 'comptable@gsek.sn',
+    password: 'admin',
+    role: 'comptable',
+    titre: 'Responsable Comptabilité',
+    matricule: 'PERS-004'
+  },
+  {
+    id: 'u-sec',
+    nom: 'Diallo',
+    prenom: 'Aminata',
+    email: 'secretaire@gsek.sn',
+    password: 'admin',
+    role: 'secretaire',
+    titre: 'Secrétaire Administrative',
+    matricule: 'PERS-005'
+  },
+  {
+    id: 'u-ens',
+    nom: 'Ba',
+    prenom: 'Mariama',
+    email: 'enseignant@gsek.sn',
+    password: 'admin',
+    role: 'enseignant',
+    titre: 'Professeure de Mathématiques',
+    matricule: 'PERS-002'
+  }
+];
 
 const generateMatricule = (annee, index) => {
   const yr = annee || new Date().getFullYear();
@@ -159,10 +203,60 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('gsek_parametres');
     return saved ? JSON.parse(saved) : defaultParametres;
   });
-  const [currentRole, setCurrentRole] = useState(() => {
-    const saved = localStorage.getItem('gsek_current_role');
-    return saved && ROLES[saved] ? saved : 'directeur';
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('gsek_current_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+    }
+    return DEFAULT_USERS[0];
   });
+
+  const [serverConnected, setServerConnected] = useState(false);
+  const currentRole = currentUser?.role || 'directeur';
+
+  // Synchronisation automatique avec le serveur SQLite au démarrage
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerData = async () => {
+      try {
+        const data = await api.getBootstrap();
+        if (!isMounted) return;
+        if (data.eleves && data.eleves.length) setEleves(data.eleves);
+        if (data.personnel && data.personnel.length) setPersonnel(data.personnel);
+        if (data.paiements) setPaiements(data.paiements);
+        if (data.bulletins) setBulletins(data.bulletins);
+        if (data.transactions) setTransactions(data.transactions);
+        if (data.absences) setAbsences(data.absences);
+        if (data.parametres && data.parametres.nom) {
+          setParametres(prev => ({ ...prev, ...data.parametres }));
+        }
+        setServerConnected(true);
+      } catch (e) {
+        // Le backend n'est pas encore démarré : utilisation transparente du localStorage
+        if (isMounted) setServerConnected(false);
+      }
+    };
+    fetchServerData();
+    return () => { isMounted = false; };
+  }, []);
+
+  const syncWithServer = async () => {
+    try {
+      const data = await api.getBootstrap();
+      if (data.eleves) setEleves(data.eleves);
+      if (data.personnel) setPersonnel(data.personnel);
+      if (data.paiements) setPaiements(data.paiements);
+      if (data.bulletins) setBulletins(data.bulletins);
+      if (data.transactions) setTransactions(data.transactions);
+      if (data.absences) setAbsences(data.absences);
+      if (data.parametres && data.parametres.nom) setParametres(prev => ({ ...prev, ...data.parametres }));
+      setServerConnected(true);
+      return { success: true };
+    } catch (err) {
+      setServerConnected(false);
+      return { success: false, error: err.message };
+    }
+  };
 
   useEffect(() => { localStorage.setItem('gsek_eleves', JSON.stringify(eleves)); }, [eleves]);
   useEffect(() => { localStorage.setItem('gsek_personnel', JSON.stringify(personnel)); }, [personnel]);
@@ -171,22 +265,52 @@ export const AppProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('gsek_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('gsek_absences', JSON.stringify(absences)); }, [absences]);
   useEffect(() => { localStorage.setItem('gsek_parametres', JSON.stringify(parametres)); }, [parametres]);
-  useEffect(() => { localStorage.setItem('gsek_current_role', currentRole); }, [currentRole]);
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('gsek_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('gsek_current_user');
+    }
+  }, [currentUser]);
+
+  const login = (email, password) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const found = DEFAULT_USERS.find(
+      u => u.email.toLowerCase() === cleanEmail && u.password === password
+    );
+    if (found) {
+      setCurrentUser(found);
+      return { success: true, user: found };
+    }
+    return { success: false, error: 'Identifiants invalides (email ou mot de passe incorrect).' };
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
   const changeRole = (newRole) => {
-    if (ROLES[newRole]) {
-      setCurrentRole(newRole);
+    const matchingUser = DEFAULT_USERS.find(u => u.role === newRole);
+    if (matchingUser) {
+      setCurrentUser(matchingUser);
+    } else if (ROLES[newRole]) {
+      setCurrentUser(prev => ({ ...(prev || DEFAULT_USERS[0]), role: newRole }));
     }
   };
 
   const isRouteAllowed = (path) => {
-    const roleConfig = ROLES[currentRole] || ROLES.directeur;
+    if (!currentUser) return false;
+    const roleConfig = ROLES[currentUser.role] || ROLES.directeur;
     // Vérifier si le chemin commence par un des préfixes autorisés
     return roleConfig.allowedRoutes.some(route => path.startsWith(route) || path === '/');
   };
 
   const updateParametres = (data) => {
-    setParametres(prev => ({ ...prev, ...data }));
+    setParametres(prev => {
+      const merged = { ...prev, ...data };
+      api.saveParametres(merged).catch(() => {});
+      return merged;
+    });
   };
 
   const addEleve = (data) => {
@@ -203,11 +327,25 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newEleve = { ...data, id: uuidv4(), matricule: generateMatricule(yr, nextIndex) };
     setEleves(prev => [...prev, newEleve]);
+    api.saveEleve(newEleve, true).catch(() => {});
     return newEleve;
   };
 
-  const updateEleve = (id, data) => setEleves(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
-  const deleteEleve = (id) => setEleves(prev => prev.filter(e => e.id !== id));
+  const updateEleve = (id, data) => {
+    setEleves(prev => prev.map(e => {
+      if (e.id === id) {
+        const updated = { ...e, ...data };
+        api.saveEleve(updated, false).catch(() => {});
+        return updated;
+      }
+      return e;
+    }));
+  };
+
+  const deleteEleve = (id) => {
+    setEleves(prev => prev.filter(e => e.id !== id));
+    api.deleteEleve(id).catch(() => {});
+  };
 
   const addPersonnel = (data) => {
     let maxNum = 0;
@@ -221,11 +359,25 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newP = { ...data, id: uuidv4(), matricule: `PERS-${String(nextIndex).padStart(3, '0')}` };
     setPersonnel(prev => [...prev, newP]);
+    api.savePersonnel(newP, true).catch(() => {});
     return newP;
   };
 
-  const updatePersonnel = (id, data) => setPersonnel(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-  const deletePersonnel = (id) => setPersonnel(prev => prev.filter(p => p.id !== id));
+  const updatePersonnel = (id, data) => {
+    setPersonnel(prev => prev.map(p => {
+      if (p.id === id) {
+        const updated = { ...p, ...data };
+        api.savePersonnel(updated, false).catch(() => {});
+        return updated;
+      }
+      return p;
+    }));
+  };
+
+  const deletePersonnel = (id) => {
+    setPersonnel(prev => prev.filter(p => p.id !== id));
+    api.deletePersonnel(id).catch(() => {});
+  };
 
   const addPaiement = (data) => {
     const yr = new Date().getFullYear();
@@ -240,11 +392,11 @@ export const AppProvider = ({ children }) => {
     });
     const nextIndex = maxNum + 1;
     const ref = `RECU-${yr}-${String(nextIndex).padStart(4, '0')}`;
-    const newP = { ...data, id: uuidv4(), ref, datePaiement: new Date().toISOString().split('T')[0] };
+    const newP = { ...data, id: uuidv4(), ref, date: new Date().toISOString().split('T')[0] };
     setPaiements(prev => [...prev, newP]);
     const recette = {
       id: uuidv4(),
-      date: newP.datePaiement,
+      date: newP.date,
       type: 'recette',
       categorie: data.type === 'inscription' ? 'Inscriptions' : 'Mensualités',
       montant: data.montant,
@@ -252,6 +404,8 @@ export const AppProvider = ({ children }) => {
       ref
     };
     setTransactions(prev => [...prev, recette]);
+    api.savePaiement(newP).catch(() => {});
+    api.saveTransaction(recette).catch(() => {});
     return newP;
   };
 
@@ -261,16 +415,31 @@ export const AppProvider = ({ children }) => {
       setTransactions(prev => prev.filter(t => t.ref !== target.ref));
     }
     setPaiements(prev => prev.filter(p => p.id !== id));
+    api.deletePaiement(id).catch(() => {});
   };
 
   const addBulletin = (data) => {
     const newB = { ...data, id: uuidv4(), dateCreation: new Date().toISOString().split('T')[0] };
     setBulletins(prev => [...prev, newB]);
+    api.saveBulletin(newB).catch(() => {});
     return newB;
   };
 
-  const updateBulletin = (id, data) => setBulletins(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
-  const deleteBulletin = (id) => setBulletins(prev => prev.filter(b => b.id !== id));
+  const updateBulletin = (id, data) => {
+    setBulletins(prev => prev.map(b => {
+      if (b.id === id) {
+        const updated = { ...b, ...data };
+        api.saveBulletin(updated).catch(() => {});
+        return updated;
+      }
+      return b;
+    }));
+  };
+
+  const deleteBulletin = (id) => {
+    setBulletins(prev => prev.filter(b => b.id !== id));
+    api.deleteBulletin(id).catch(() => {});
+  };
 
   const addTransaction = (data) => {
     let maxNum = 0;
@@ -284,18 +453,26 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newT = { ...data, id: uuidv4(), ref: `TRX-${String(nextIndex).padStart(4, '0')}` };
     setTransactions(prev => [...prev, newT]);
+    api.saveTransaction(newT).catch(() => {});
     return newT;
   };
 
-  const deleteTransaction = (id) => setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = (id) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+    api.deleteTransaction(id).catch(() => {});
+  };
 
   const addAbsence = (data) => {
     const newA = { ...data, id: uuidv4() };
     setAbsences(prev => [newA, ...prev]);
+    api.saveAbsence(newA).catch(() => {});
     return newA;
   };
 
-  const deleteAbsence = (id) => setAbsences(prev => prev.filter(a => a.id !== id));
+  const deleteAbsence = (id) => {
+    setAbsences(prev => prev.filter(a => a.id !== id));
+    api.deleteAbsence(id).catch(() => {});
+  };
 
   // Clôture d'année & Passage de classe
   const clotureEtPassageClasse = ({ promotions, nouvelleAnneeScolaire }) => {
@@ -364,7 +541,9 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       eleves, personnel, paiements, bulletins, transactions, absences, parametres,
-      currentRole, changeRole, isRouteAllowed, ROLES,
+      currentUser, currentRole, changeRole, login, logout, DEFAULT_USERS,
+      serverConnected, syncWithServer,
+      isRouteAllowed, ROLES,
       addEleve, updateEleve, deleteEleve,
       addPersonnel, updatePersonnel, deletePersonnel,
       addPaiement, deletePaiement,

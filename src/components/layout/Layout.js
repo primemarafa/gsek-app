@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Search
+  Search,
+  LogOut
 } from 'lucide-react';
 import './Layout.css';
 
@@ -36,7 +37,7 @@ const nav = [
 ];
 
 export default function Layout({ children }) {
-  const { parametres, currentRole, changeRole, ROLES } = useApp();
+  const { parametres, currentUser, currentRole, logout, ROLES, serverConnected } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -68,14 +69,14 @@ export default function Layout({ children }) {
           {!collapsed && (
             <div className="brand-text">
               <div className="brand-name">
-                <span>{parametres?.nom ? parametres.nom.split(' ')[0] : 'GSEK'}</span>
-                <span className="accent-dot" />
+                <span>GSEK</span>
+                <span className="brand-badge">Scolaire</span>
               </div>
-              <span className="brand-sub">Système de gestion</span>
+              <span className="brand-sub">Sidy Konaté</span>
             </div>
           )}
           <button
-            className="collapse-btn desktop-only"
+            className="sidebar-collapse-btn desktop-only"
             onClick={() => setCollapsed(!collapsed)}
             title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
           >
@@ -117,7 +118,7 @@ export default function Layout({ children }) {
         <div className="sidebar-footer">
           {!collapsed && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span>© {new Date().getFullYear()} {parametres?.nom?.split(' ')[0] || 'GSEK'}</span>
+              <span>© {new Date().getFullYear()} GSEK</span>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                 Rôle : {ROLES[currentRole]?.label}
               </span>
@@ -134,82 +135,67 @@ export default function Layout({ children }) {
               onClick={() => setMobileOpen(true)}
               aria-label="Ouvrir le menu"
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
-            <div className="header-school">
-              <div className="header-icon-box">
-                <School size={20} />
-              </div>
-              <div>
-                <div className="header-school-name">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}</div>
-                <div className="header-school-sub">Année scolaire {parametres?.anneeScolaire || "2024-2025"}</div>
-              </div>
+            <div className="header-school-tag">
+              <School size={16} className="school-tag-icon" />
+              <span className="school-tag-title">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}</span>
+              <span className="school-tag-badge">Année {parametres?.anneeScolaire || "2024-2025"}</span>
+              <span
+                className="school-tag-badge desktop-only"
+                style={{
+                  background: serverConnected ? '#ecfdf5' : '#f8fafc',
+                  color: serverConnected ? '#059669' : '#64748b',
+                  border: serverConnected ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                  fontWeight: 600
+                }}
+                title={serverConnected ? "Base de données SQLite synchronisée sur l'UC" : "Mode local autonome"}
+              >
+                {serverConnected ? '● Serveur Connecté' : '○ Mode Local'}
+              </span>
             </div>
           </div>
 
           <div className="header-right">
             {/* Barre de recherche rapide (Ctrl+K) */}
             <button
-              className="header-quick-search-btn desktop-only"
+              className="header-ctrlk-btn desktop-only"
               onClick={() => setPaletteOpen(true)}
               title="Recherche universelle rapide (Ctrl + K)"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '7px 14px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: '#f8fafc',
-                color: '#64748b',
-                fontSize: 13,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
             >
-              <Search size={14} color="#64748b" />
-              <span>Rechercher...</span>
-              <kbd style={{ fontSize: 10, background: 'white', padding: '1px 5px', borderRadius: 4, border: '1px solid #cbd5e1', fontWeight: 700, color: '#475569', marginLeft: 4 }}>
-                Ctrl K
-              </kbd>
+              <Search size={14} className="ctrlk-icon" />
+              <span className="ctrlk-label">Rechercher...</span>
+              <kbd className="ctrlk-kbd">Ctrl K</kbd>
             </button>
 
             {/* Centre de notifications */}
             <NotificationBell />
 
-            {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)' }}>
-              <ShieldCheck size={15} color="var(--primary)" />
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
-              <select
-                value={currentRole}
-                onChange={e => changeRole(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontWeight: 700,
-                  fontSize: 12,
-                  color: 'var(--primary)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  padding: '2px 0'
-                }}
-                title="Changer de profil d'accès (Directeur / Comptable / Secrétaire / Enseignant)"
-              >
-                {Object.values(ROLES).map(r => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
-                ))}
-              </select>
+            {/* Badge de rôle sécurisé et verrouillé */}
+            <div className="header-role-pill desktop-only" title={`Connecté avec le profil : ${ROLES[currentRole]?.label}`}>
+              <ShieldCheck size={14} className="role-pill-icon" />
+              <span className="role-pill-text">{ROLES[currentRole]?.label}</span>
             </div>
 
-            <div className="header-user">
-              <div className="user-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary)' }}>
-                {currentRole[0].toUpperCase()}
+            {/* Profil utilisateur connecté avec bouton déconnexion */}
+            <div className="header-user-badge">
+              <div className="user-badge-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary-light)' }}>
+                {currentUser ? (currentUser.prenom?.[0] || currentUser.nom?.[0]) : currentRole[0].toUpperCase()}
               </div>
-              <div className="user-info desktop-only">
-                <div className="user-name">{ROLES[currentRole]?.label}</div>
-                <div className="user-role">{currentRole === 'directeur' ? 'Administrateur' : 'Poste restreint'}</div>
+              <div className="user-badge-meta desktop-only">
+                <span className="user-badge-name">
+                  {currentUser ? `${currentUser.prenom} ${currentUser.nom}` : ROLES[currentRole]?.label}
+                </span>
+                <span className="user-badge-role">{ROLES[currentRole]?.label}</span>
               </div>
+              <button
+                className="header-logout-btn"
+                onClick={logout}
+                title="Se déconnecter"
+                aria-label="Se déconnecter"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           </div>
         </header>
