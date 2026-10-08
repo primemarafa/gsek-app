@@ -193,7 +193,9 @@
 
 .top-header {
   height: var(--header-height);
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -202,6 +204,7 @@
   flex-shrink: 0;
   gap: 16px;
   box-sizing: border-box;
+  z-index: 40;
 }
 
 .header-left {
