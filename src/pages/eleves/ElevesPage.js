@@ -200,7 +200,12 @@ export default function ElevesPage() {
                     <td>{e.sexe === 'M' ? 'Garçon' : 'Fille'}</td>
                     <td>{e.dateNaissance ? new Date(e.dateNaissance).toLocaleDateString('fr-SN') : '—'}</td>
                     <td style={{ fontSize: 13 }}>{e.parentNom}<br /><span style={{ color: 'var(--text-muted)' }}>{e.parentTel}</span></td>
-                    <td><span className={`badge ${e.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{e.statut}</span></td>
+                    <td>
+                      <span className={`badge ${e.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>
+                        {e.statut === 'actif' && <span className="status-dot active" />}
+                        {e.statut}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => navigate(`/eleves/${e.id}`)} title="Voir la fiche">

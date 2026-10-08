@@ -198,7 +198,12 @@ export default function PersonnelPage() {
                     <td>{p.matiere || '—'}</td>
                     <td style={{ fontWeight: 600 }}>{p.salaire ? fmt(p.salaire) : '—'}</td>
                     <td><span className="badge badge-info">{p.contrat}</span></td>
-                    <td><span className={`badge ${p.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>{p.statut}</span></td>
+                    <td>
+                      <span className={`badge ${p.statut === 'actif' ? 'badge-success' : 'badge-warning'}`}>
+                        {p.statut === 'actif' && <span className="status-dot active" />}
+                        {p.statut}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button className="btn btn-outline" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => openEdit(p)} title="Modifier">
