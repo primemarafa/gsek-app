@@ -34,6 +34,49 @@ export const ROLES = {
   }
 };
 
+export const DEFAULT_USERS = [
+  {
+    id: 'u-dir',
+    nom: 'Sarr',
+    prenom: 'Abdoulaye',
+    email: 'direction@gsek.sn',
+    password: 'admin',
+    role: 'directeur',
+    titre: 'Directeur Général',
+    matricule: 'PERS-001'
+  },
+  {
+    id: 'u-cpt',
+    nom: 'Diop',
+    prenom: 'Mamadou',
+    email: 'comptable@gsek.sn',
+    password: 'admin',
+    role: 'comptable',
+    titre: 'Responsable Comptabilité',
+    matricule: 'PERS-004'
+  },
+  {
+    id: 'u-sec',
+    nom: 'Diallo',
+    prenom: 'Aminata',
+    email: 'secretaire@gsek.sn',
+    password: 'admin',
+    role: 'secretaire',
+    titre: 'Secrétaire Administrative',
+    matricule: 'PERS-005'
+  },
+  {
+    id: 'u-ens',
+    nom: 'Ba',
+    prenom: 'Mariama',
+    email: 'enseignant@gsek.sn',
+    password: 'admin',
+    role: 'enseignant',
+    titre: 'Professeure de Mathématiques',
+    matricule: 'PERS-002'
+  }
+];
+
 const generateMatricule = (annee, index) => {
   const yr = annee || new Date().getFullYear();
   const num = String(index).padStart(4, '0');
@@ -159,10 +202,15 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('gsek_parametres');
     return saved ? JSON.parse(saved) : defaultParametres;
   });
-  const [currentRole, setCurrentRole] = useState(() => {
-    const saved = localStorage.getItem('gsek_current_role');
-    return saved && ROLES[saved] ? saved : 'directeur';
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('gsek_current_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+    }
+    return DEFAULT_USERS[0];
   });
+
+  const currentRole = currentUser?.role || 'directeur';
 
   useEffect(() => { localStorage.setItem('gsek_eleves', JSON.stringify(eleves)); }, [eleves]);
   useEffect(() => { localStorage.setItem('gsek_personnel', JSON.stringify(personnel)); }, [personnel]);
@@ -171,16 +219,42 @@ export const AppProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('gsek_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('gsek_absences', JSON.stringify(absences)); }, [absences]);
   useEffect(() => { localStorage.setItem('gsek_parametres', JSON.stringify(parametres)); }, [parametres]);
-  useEffect(() => { localStorage.setItem('gsek_current_role', currentRole); }, [currentRole]);
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('gsek_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('gsek_current_user');
+    }
+  }, [currentUser]);
+
+  const login = (email, password) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const found = DEFAULT_USERS.find(
+      u => u.email.toLowerCase() === cleanEmail && u.password === password
+    );
+    if (found) {
+      setCurrentUser(found);
+      return { success: true, user: found };
+    }
+    return { success: false, error: 'Identifiants invalides (email ou mot de passe incorrect).' };
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
   const changeRole = (newRole) => {
-    if (ROLES[newRole]) {
-      setCurrentRole(newRole);
+    const matchingUser = DEFAULT_USERS.find(u => u.role === newRole);
+    if (matchingUser) {
+      setCurrentUser(matchingUser);
+    } else if (ROLES[newRole]) {
+      setCurrentUser(prev => ({ ...(prev || DEFAULT_USERS[0]), role: newRole }));
     }
   };
 
   const isRouteAllowed = (path) => {
-    const roleConfig = ROLES[currentRole] || ROLES.directeur;
+    if (!currentUser) return false;
+    const roleConfig = ROLES[currentUser.role] || ROLES.directeur;
     // Vérifier si le chemin commence par un des préfixes autorisés
     return roleConfig.allowedRoutes.some(route => path.startsWith(route) || path === '/');
   };
@@ -364,7 +438,8 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       eleves, personnel, paiements, bulletins, transactions, absences, parametres,
-      currentRole, changeRole, isRouteAllowed, ROLES,
+      currentUser, currentRole, changeRole, login, logout, DEFAULT_USERS,
+      isRouteAllowed, ROLES,
       addEleve, updateEleve, deleteEleve,
       addPersonnel, updatePersonnel, deletePersonnel,
       addPaiement, deletePaiement,

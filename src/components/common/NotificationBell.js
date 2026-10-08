@@ -14,7 +14,7 @@ import './NotificationBell.css';
 
 export default function NotificationBell() {
   const navigate = useNavigate();
-  const { eleves, paiements, absences } = useApp();
+  const { eleves, paiements, absences, isRouteAllowed } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [readIds, setReadIds] = useState(() => {
     const saved = localStorage.getItem('gsek_read_notifs');
@@ -38,16 +38,16 @@ export default function NotificationBell() {
     localStorage.setItem('gsek_read_notifs', JSON.stringify(readIds));
   }, [readIds]);
 
-  // Calcul dynamique des alertes scolaires
+  // Calcul dynamique des alertes scolaires selon les permissions du rôle
   const notifications = [];
 
-  // 1. Alertes d'impayés
+  // 1. Alertes d'impayés (Comptabilité & Direction)
   const elevesActifs = eleves.filter(e => e.statut === 'actif');
   const impayesOctobre = elevesActifs.filter(eleve => {
     return !paiements.some(p => p.eleveId === eleve.id && p.type === 'mensualite' && p.mois === 'Octobre');
   });
 
-  if (impayesOctobre.length > 0) {
+  if (impayesOctobre.length > 0 && isRouteAllowed('/paiement')) {
     notifications.push({
       id: 'notif-impayes',
       type: 'warning',
@@ -59,10 +59,10 @@ export default function NotificationBell() {
     });
   }
 
-  // 2. Alertes assiduité
+  // 2. Alertes assiduité (Vie scolaire)
   const today = new Date().toISOString().split('T')[0];
   const absencesAujourdhui = absences.filter(a => a.date === today);
-  if (absencesAujourdhui.length > 0) {
+  if (absencesAujourdhui.length > 0 && isRouteAllowed('/viescolaire')) {
     notifications.push({
       id: `notif-absences-${today}`,
       type: 'info',
@@ -74,16 +74,18 @@ export default function NotificationBell() {
     });
   }
 
-  // 3. Alerte sauvegarde
-  notifications.push({
-    id: 'notif-backup',
-    type: 'tip',
-    icon: Database,
-    title: 'Sauvegarde des données',
-    description: 'Pensez à télécharger une copie JSON sécurisée de vos registres.',
-    path: '/parametres',
-    actionLabel: 'Sauvegarder'
-  });
+  // 3. Alerte sauvegarde (Directeur exclusivement)
+  if (isRouteAllowed('/parametres')) {
+    notifications.push({
+      id: 'notif-backup',
+      type: 'tip',
+      icon: Database,
+      title: 'Sauvegarde des données',
+      description: 'Pensez à télécharger une copie JSON sécurisée de vos registres.',
+      path: '/parametres',
+      actionLabel: 'Sauvegarder'
+    });
+  }
 
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
 

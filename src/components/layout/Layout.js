@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Search
+  Search,
+  LogOut
 } from 'lucide-react';
 import './Layout.css';
 
@@ -36,7 +37,7 @@ const nav = [
 ];
 
 export default function Layout({ children }) {
-  const { parametres, currentRole, changeRole, ROLES } = useApp();
+  const { parametres, currentUser, currentRole, logout, ROLES } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -158,31 +159,31 @@ export default function Layout({ children }) {
             {/* Centre de notifications */}
             <NotificationBell />
 
-            {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
-            <div className="header-role-pill desktop-only">
+            {/* Badge de rôle sécurisé et verrouillé */}
+            <div className="header-role-pill desktop-only" title={`Connecté avec le profil : ${ROLES[currentRole]?.label}`}>
               <ShieldCheck size={14} className="role-pill-icon" />
-              <span className="role-pill-text">Profil :</span>
-              <select
-                value={currentRole}
-                onChange={e => changeRole(e.target.value)}
-                className="role-pill-select"
-                title="Changer de profil d'accès"
-              >
-                {Object.values(ROLES).map(r => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
-                ))}
-              </select>
+              <span className="role-pill-text">{ROLES[currentRole]?.label}</span>
             </div>
 
-            {/* Profil utilisateur connecté */}
+            {/* Profil utilisateur connecté avec bouton déconnexion */}
             <div className="header-user-badge">
               <div className="user-badge-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary-light)' }}>
-                {currentRole[0].toUpperCase()}
+                {currentUser ? (currentUser.prenom?.[0] || currentUser.nom?.[0]) : currentRole[0].toUpperCase()}
               </div>
               <div className="user-badge-meta desktop-only">
-                <span className="user-badge-name">{ROLES[currentRole]?.label}</span>
-                <span className="user-badge-role">{currentRole === 'directeur' ? 'Admin' : 'Accès restreint'}</span>
+                <span className="user-badge-name">
+                  {currentUser ? `${currentUser.prenom} ${currentUser.nom}` : ROLES[currentRole]?.label}
+                </span>
+                <span className="user-badge-role">{ROLES[currentRole]?.label}</span>
               </div>
+              <button
+                className="header-logout-btn"
+                onClick={logout}
+                title="Se déconnecter"
+                aria-label="Se déconnecter"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           </div>
         </header>

@@ -293,7 +293,7 @@
   margin-left: 2px;
 }
 
-/* 2. RBAC role switcher */
+/* 2. RBAC role badge */
 .header-role-pill {
   height: 36px;
   display: flex;
@@ -314,35 +314,21 @@
 }
 
 .role-pill-text {
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary);
   display: inline-block;
   margin: 0;
   padding: 0;
 }
 
-.role-pill-select {
-  height: 28px !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  font-weight: 700 !important;
-  font-size: 12.5px !important;
-  color: var(--primary) !important;
-  cursor: pointer;
-  padding: 0 4px !important;
-  width: auto !important;
-}
-
-/* 3. User profile badge */
+/* 3. User profile badge & logout */
 .header-user-badge {
   height: 36px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px 0 4px;
+  padding: 0 6px 0 4px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: #ffffff;
@@ -372,13 +358,36 @@
 
 .user-badge-name {
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-badge-role {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
+}
+
+.header-logout-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.header-logout-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
 }
 
 /* Main Content Area */
