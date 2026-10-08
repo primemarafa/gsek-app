@@ -15,8 +15,12 @@ import {
   GraduationCap,
   ArrowRight,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Server,
+  RefreshCw,
+  HardDrive
 } from 'lucide-react';
+import { api } from '../../services/api';
 
 export default function ParametresPage() {
   const {
@@ -31,6 +35,8 @@ export default function ParametresPage() {
     transactions,
     absences,
     clotureEtPassageClasse,
+    serverConnected,
+    syncWithServer,
     CLASSES,
     ANNEES
   } = useApp();
@@ -40,6 +46,8 @@ export default function ParametresPage() {
   const [ecole, setEcole] = useState(parametres);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [pendingImportData, setPendingImportData] = useState(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   // États pour la clôture et passage de classe
@@ -75,6 +83,29 @@ export default function ParametresPage() {
   const handleSave = () => {
     updateParametres(ecole);
     toast.success('Paramètres enregistrés avec succès !');
+  };
+
+  const handleServerBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await api.createBackup();
+      toast.success(`Sauvegarde SQLite réussie sur l'UC : ${res.fileName}`);
+    } catch (err) {
+      toast.error(`Erreur de sauvegarde serveur : ${err.message}`);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setSyncLoading(true);
+    const res = await syncWithServer();
+    setSyncLoading(false);
+    if (res.success) {
+      toast.success("Synchronisation réussie avec la base de données de l'UC !");
+    } else {
+      toast.info("Serveur central non détecté. Mode local actif.");
+    }
   };
 
   const handleFileChange = (e) => {
@@ -253,9 +284,52 @@ export default function ParametresPage() {
               </div>
             </div>
 
+            {/* Section Serveur Central Local & Base SQLite */}
+            <div className="card" style={{ borderLeft: serverConnected ? '4px solid #10b981' : '4px solid #f59e0b' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+                <h3 style={{ fontSize: 17, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                  <Server size={19} color={serverConnected ? '#10b981' : 'var(--primary)'} />
+                  Serveur Central Local (UC)
+                </h3>
+                <span className={`badge ${serverConnected ? 'badge-success' : 'badge-warning'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', fontSize: 12 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: serverConnected ? '#10b981' : '#f59e0b', display: 'inline-block' }} />
+                  {serverConnected ? 'Base SQLite WAL Connectée' : 'Mode Autonome (Navigateur)'}
+                </span>
+              </div>
+
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                {serverConnected
+                  ? "Toutes vos opérations sont automatiquement enregistrées et répliquées en temps réel dans la base de données SQLite de l'UC centrale."
+                  : "Le serveur local central n'est pas détecté. Vous travaillez en toute autonomie sur les données locales de ce navigateur."}
+              </p>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {serverConnected && (
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleServerBackup}
+                    disabled={backupLoading}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <HardDrive size={16} />
+                    {backupLoading ? 'Sauvegarde en cours...' : 'Créer sauvegarde SQLite sur l\'UC'}
+                  </button>
+                )}
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleManualSync}
+                  disabled={syncLoading}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  <RefreshCw size={16} className={syncLoading ? 'spin' : ''} />
+                  {syncLoading ? 'Synchronisation...' : 'Synchroniser avec le serveur'}
+                </button>
+              </div>
+            </div>
+
             <div className="card">
               <h3 style={{ marginBottom: 16, fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Database size={19} color="var(--primary)" /> Sauvegarde & Restauration
+                <Database size={19} color="var(--primary)" /> Export & Restauration Fichier
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
                 Téléchargez une copie complète des données (élèves, bulletins, transactions, présences) au format JSON sécurisé.

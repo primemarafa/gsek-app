@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { api } from '../services/api';
 
 const AppContext = createContext();
 
@@ -210,7 +211,52 @@ export const AppProvider = ({ children }) => {
     return DEFAULT_USERS[0];
   });
 
+  const [serverConnected, setServerConnected] = useState(false);
   const currentRole = currentUser?.role || 'directeur';
+
+  // Synchronisation automatique avec le serveur SQLite au démarrage
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerData = async () => {
+      try {
+        const data = await api.getBootstrap();
+        if (!isMounted) return;
+        if (data.eleves && data.eleves.length) setEleves(data.eleves);
+        if (data.personnel && data.personnel.length) setPersonnel(data.personnel);
+        if (data.paiements) setPaiements(data.paiements);
+        if (data.bulletins) setBulletins(data.bulletins);
+        if (data.transactions) setTransactions(data.transactions);
+        if (data.absences) setAbsences(data.absences);
+        if (data.parametres && data.parametres.nom) {
+          setParametres(prev => ({ ...prev, ...data.parametres }));
+        }
+        setServerConnected(true);
+      } catch (e) {
+        // Le backend n'est pas encore démarré : utilisation transparente du localStorage
+        if (isMounted) setServerConnected(false);
+      }
+    };
+    fetchServerData();
+    return () => { isMounted = false; };
+  }, []);
+
+  const syncWithServer = async () => {
+    try {
+      const data = await api.getBootstrap();
+      if (data.eleves) setEleves(data.eleves);
+      if (data.personnel) setPersonnel(data.personnel);
+      if (data.paiements) setPaiements(data.paiements);
+      if (data.bulletins) setBulletins(data.bulletins);
+      if (data.transactions) setTransactions(data.transactions);
+      if (data.absences) setAbsences(data.absences);
+      if (data.parametres && data.parametres.nom) setParametres(prev => ({ ...prev, ...data.parametres }));
+      setServerConnected(true);
+      return { success: true };
+    } catch (err) {
+      setServerConnected(false);
+      return { success: false, error: err.message };
+    }
+  };
 
   useEffect(() => { localStorage.setItem('gsek_eleves', JSON.stringify(eleves)); }, [eleves]);
   useEffect(() => { localStorage.setItem('gsek_personnel', JSON.stringify(personnel)); }, [personnel]);
@@ -260,7 +306,11 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateParametres = (data) => {
-    setParametres(prev => ({ ...prev, ...data }));
+    setParametres(prev => {
+      const merged = { ...prev, ...data };
+      api.saveParametres(merged).catch(() => {});
+      return merged;
+    });
   };
 
   const addEleve = (data) => {
@@ -277,11 +327,25 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newEleve = { ...data, id: uuidv4(), matricule: generateMatricule(yr, nextIndex) };
     setEleves(prev => [...prev, newEleve]);
+    api.saveEleve(newEleve, true).catch(() => {});
     return newEleve;
   };
 
-  const updateEleve = (id, data) => setEleves(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
-  const deleteEleve = (id) => setEleves(prev => prev.filter(e => e.id !== id));
+  const updateEleve = (id, data) => {
+    setEleves(prev => prev.map(e => {
+      if (e.id === id) {
+        const updated = { ...e, ...data };
+        api.saveEleve(updated, false).catch(() => {});
+        return updated;
+      }
+      return e;
+    }));
+  };
+
+  const deleteEleve = (id) => {
+    setEleves(prev => prev.filter(e => e.id !== id));
+    api.deleteEleve(id).catch(() => {});
+  };
 
   const addPersonnel = (data) => {
     let maxNum = 0;
@@ -295,11 +359,25 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newP = { ...data, id: uuidv4(), matricule: `PERS-${String(nextIndex).padStart(3, '0')}` };
     setPersonnel(prev => [...prev, newP]);
+    api.savePersonnel(newP, true).catch(() => {});
     return newP;
   };
 
-  const updatePersonnel = (id, data) => setPersonnel(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-  const deletePersonnel = (id) => setPersonnel(prev => prev.filter(p => p.id !== id));
+  const updatePersonnel = (id, data) => {
+    setPersonnel(prev => prev.map(p => {
+      if (p.id === id) {
+        const updated = { ...p, ...data };
+        api.savePersonnel(updated, false).catch(() => {});
+        return updated;
+      }
+      return p;
+    }));
+  };
+
+  const deletePersonnel = (id) => {
+    setPersonnel(prev => prev.filter(p => p.id !== id));
+    api.deletePersonnel(id).catch(() => {});
+  };
 
   const addPaiement = (data) => {
     const yr = new Date().getFullYear();
@@ -314,11 +392,11 @@ export const AppProvider = ({ children }) => {
     });
     const nextIndex = maxNum + 1;
     const ref = `RECU-${yr}-${String(nextIndex).padStart(4, '0')}`;
-    const newP = { ...data, id: uuidv4(), ref, datePaiement: new Date().toISOString().split('T')[0] };
+    const newP = { ...data, id: uuidv4(), ref, date: new Date().toISOString().split('T')[0] };
     setPaiements(prev => [...prev, newP]);
     const recette = {
       id: uuidv4(),
-      date: newP.datePaiement,
+      date: newP.date,
       type: 'recette',
       categorie: data.type === 'inscription' ? 'Inscriptions' : 'Mensualités',
       montant: data.montant,
@@ -326,6 +404,8 @@ export const AppProvider = ({ children }) => {
       ref
     };
     setTransactions(prev => [...prev, recette]);
+    api.savePaiement(newP).catch(() => {});
+    api.saveTransaction(recette).catch(() => {});
     return newP;
   };
 
@@ -335,16 +415,31 @@ export const AppProvider = ({ children }) => {
       setTransactions(prev => prev.filter(t => t.ref !== target.ref));
     }
     setPaiements(prev => prev.filter(p => p.id !== id));
+    api.deletePaiement(id).catch(() => {});
   };
 
   const addBulletin = (data) => {
     const newB = { ...data, id: uuidv4(), dateCreation: new Date().toISOString().split('T')[0] };
     setBulletins(prev => [...prev, newB]);
+    api.saveBulletin(newB).catch(() => {});
     return newB;
   };
 
-  const updateBulletin = (id, data) => setBulletins(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
-  const deleteBulletin = (id) => setBulletins(prev => prev.filter(b => b.id !== id));
+  const updateBulletin = (id, data) => {
+    setBulletins(prev => prev.map(b => {
+      if (b.id === id) {
+        const updated = { ...b, ...data };
+        api.saveBulletin(updated).catch(() => {});
+        return updated;
+      }
+      return b;
+    }));
+  };
+
+  const deleteBulletin = (id) => {
+    setBulletins(prev => prev.filter(b => b.id !== id));
+    api.deleteBulletin(id).catch(() => {});
+  };
 
   const addTransaction = (data) => {
     let maxNum = 0;
@@ -358,18 +453,26 @@ export const AppProvider = ({ children }) => {
     const nextIndex = maxNum + 1;
     const newT = { ...data, id: uuidv4(), ref: `TRX-${String(nextIndex).padStart(4, '0')}` };
     setTransactions(prev => [...prev, newT]);
+    api.saveTransaction(newT).catch(() => {});
     return newT;
   };
 
-  const deleteTransaction = (id) => setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = (id) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+    api.deleteTransaction(id).catch(() => {});
+  };
 
   const addAbsence = (data) => {
     const newA = { ...data, id: uuidv4() };
     setAbsences(prev => [newA, ...prev]);
+    api.saveAbsence(newA).catch(() => {});
     return newA;
   };
 
-  const deleteAbsence = (id) => setAbsences(prev => prev.filter(a => a.id !== id));
+  const deleteAbsence = (id) => {
+    setAbsences(prev => prev.filter(a => a.id !== id));
+    api.deleteAbsence(id).catch(() => {});
+  };
 
   // Clôture d'année & Passage de classe
   const clotureEtPassageClasse = ({ promotions, nouvelleAnneeScolaire }) => {
@@ -439,6 +542,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       eleves, personnel, paiements, bulletins, transactions, absences, parametres,
       currentUser, currentRole, changeRole, login, logout, DEFAULT_USERS,
+      serverConnected, syncWithServer,
       isRouteAllowed, ROLES,
       addEleve, updateEleve, deleteEleve,
       addPersonnel, updatePersonnel, deletePersonnel,

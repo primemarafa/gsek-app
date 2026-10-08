@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.js
@@ -27,5 +27,11 @@ yarn-error.log*
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+
+# SQLite Database & Local Backups
+*.sqlite*
+server/data/*.sqlite
+server/data/*.sqlite-wal
+server/data/*.sqlite-shm
+server/backups/*.sqlite

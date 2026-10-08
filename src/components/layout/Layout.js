@@ -37,7 +37,7 @@ const nav = [
 ];
 
 export default function Layout({ children }) {
-  const { parametres, currentUser, currentRole, logout, ROLES } = useApp();
+  const { parametres, currentUser, currentRole, logout, ROLES, serverConnected } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -141,6 +141,18 @@ export default function Layout({ children }) {
               <School size={16} className="school-tag-icon" />
               <span className="school-tag-title">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}</span>
               <span className="school-tag-badge">Année {parametres?.anneeScolaire || "2024-2025"}</span>
+              <span
+                className="school-tag-badge desktop-only"
+                style={{
+                  background: serverConnected ? '#ecfdf5' : '#f8fafc',
+                  color: serverConnected ? '#059669' : '#64748b',
+                  border: serverConnected ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                  fontWeight: 600
+                }}
+                title={serverConnected ? "Base de données SQLite synchronisée sur l'UC" : "Mode local autonome"}
+              >
+                {serverConnected ? '● Serveur Connecté' : '○ Mode Local'}
+              </span>
             </div>
           </div>
 

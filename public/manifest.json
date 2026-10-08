@@ -1,0 +1,16 @@
+{
+  "short_name": "GSEK",
+  "name": "Groupe Scolaire d'Excellence Sidy Konaté",
+  "description": "Système de Gestion Scolaire Centralisé — GSEK",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1e3a8a",
+  "background_color": "#f8fafc"
+}
