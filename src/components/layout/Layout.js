@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import CommandPalette from '../common/CommandPalette';
+import NotificationBell from '../common/NotificationBell';
 import {
   LayoutDashboard,
   GraduationCap,
@@ -17,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 import './Layout.css';
 
@@ -37,6 +40,19 @@ export default function Layout({ children }) {
   const { parametres, currentRole, changeRole, ROLES } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Raccourci global Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Filtrer les onglets accessibles par le profil actif
   const visibleNav = nav.filter(item => item.roles.includes(currentRole || 'directeur'));
@@ -130,40 +146,67 @@ export default function Layout({ children }) {
           </div>
 
           <div className="header-right">
-            {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '4px 10px', borderRadius: 20 }}>
-                <ShieldCheck size={16} color="var(--primary)" />
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
-                <select
-                  value={currentRole}
-                  onChange={e => changeRole(e.target.value)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    color: 'var(--primary)',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    padding: '2px 0'
-                  }}
-                  title="Changer de profil d'accès (Directeur / Comptable / Secrétaire / Enseignant)"
-                >
-                  {Object.values(ROLES).map(r => (
-                    <option key={r.id} value={r.id}>{r.label}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Barre de recherche rapide (Ctrl+K) */}
+            <button
+              className="header-quick-search-btn desktop-only"
+              onClick={() => setPaletteOpen(true)}
+              title="Recherche universelle rapide (Ctrl + K)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 14px',
+                borderRadius: 20,
+                border: '1.5px solid var(--border)',
+                background: '#f8fafc',
+                color: '#64748b',
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Search size={15} color="var(--primary)" />
+              <span>Rechercher...</span>
+              <kbd style={{ fontSize: 10, background: 'white', padding: '1px 5px', borderRadius: 4, border: '1px solid #cbd5e1', fontWeight: 700, color: '#475569' }}>
+                Ctrl K
+              </kbd>
+            </button>
 
-              <div className="header-user">
-                <div className="user-avatar" style={{ background: currentRole === 'directeur' ? '#c8960c' : '#1a3a6b' }}>
-                  {currentRole[0].toUpperCase()}
-                </div>
-                <div className="user-info desktop-only">
-                  <div className="user-name">{ROLES[currentRole]?.label}</div>
-                  <div className="user-role">{currentRole === 'directeur' ? 'Administrateur' : 'Poste restreint'}</div>
-                </div>
+            {/* Centre de notifications */}
+            <NotificationBell />
+
+            {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '4px 10px', borderRadius: 20 }}>
+              <ShieldCheck size={16} color="var(--primary)" />
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
+              <select
+                value={currentRole}
+                onChange={e => changeRole(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  padding: '2px 0'
+                }}
+                title="Changer de profil d'accès (Directeur / Comptable / Secrétaire / Enseignant)"
+              >
+                {Object.values(ROLES).map(r => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="header-user">
+              <div className="user-avatar" style={{ background: currentRole === 'directeur' ? '#c8960c' : '#1a3a6b' }}>
+                {currentRole[0].toUpperCase()}
+              </div>
+              <div className="user-info desktop-only">
+                <div className="user-name">{ROLES[currentRole]?.label}</div>
+                <div className="user-role">{currentRole === 'directeur' ? 'Administrateur' : 'Poste restreint'}</div>
               </div>
             </div>
           </div>
@@ -173,6 +216,9 @@ export default function Layout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Palette de commande Ctrl+K */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
