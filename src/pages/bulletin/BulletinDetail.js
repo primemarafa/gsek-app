@@ -8,13 +8,17 @@ import './BulletinPrint.css';
 export default function BulletinDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { bulletins, eleves, parametres } = useApp();
+  const { bulletins, eleves, parametres, absences } = useApp();
   const printRef = useRef();
 
   const bulletin = bulletins.find(b => b.id === id);
   if (!bulletin) return <div className="page-container"><p>Bulletin introuvable.</p></div>;
 
   const eleve = eleves.find(e => e.id === bulletin.eleveId);
+  const eleveAbsences = (absences || []).filter(a => a.eleveId === bulletin.eleveId || (eleve && a.eleveMatricule === eleve.matricule));
+  const totalInjustifieesH = eleveAbsences.filter(a => a.type === 'injustifiee').reduce((s, a) => s + (Number(a.dureeHeures) || 0), 0);
+  const totalJustifieesH = eleveAbsences.filter(a => a.type === 'justifiee').reduce((s, a) => s + (Number(a.dureeHeures) || 0), 0);
+  const totalRetardsCount = eleveAbsences.filter(a => a.type === 'retard').length;
   const handlePrint = useReactToPrint({ content: () => printRef.current });
 
   const mention = (moy) => {
@@ -128,6 +132,13 @@ export default function BulletinDetail() {
               {['', '', ''].map((_, i) => <div key={i} className="app-line" />)}
             </div>
           </div>
+        </div>
+
+        <div className="bulletin-assiduite-section" style={{ margin: '14px 0', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+          <div><strong>Vie Scolaire & Assiduité :</strong></div>
+          <div>Absences justifiées : <strong>{totalJustifieesH} h</strong></div>
+          <div>Absences non justifiées : <strong style={{ color: totalInjustifieesH > 0 ? '#d85a30' : 'inherit' }}>{totalInjustifieesH} h</strong></div>
+          <div>Retards : <strong>{totalRetardsCount}</strong></div>
         </div>
 
         <div className="bulletin-signatures">

@@ -14,6 +14,7 @@ import {
   Edit3,
   Trash2,
   Download,
+  CreditCard,
   Save,
   X
 } from 'lucide-react';
@@ -136,6 +137,9 @@ export default function ElevesPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn btn-outline" onClick={handleExportCsv} title="Exporter la liste en fichier Excel / CSV">
             <Download size={16} /> Exporter CSV
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/badges')} title="Imprimer les cartes d'identité scolaires avec QR Code">
+            <CreditCard size={16} /> Cartes & Badges
           </button>
           <button className="btn btn-primary" onClick={openCreateModal}>
             <UserPlus size={17} /> Inscrire un élève

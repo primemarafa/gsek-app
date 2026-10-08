@@ -4,6 +4,8 @@ import { useApp } from '../../context/AppContext';
 import {
   LayoutDashboard,
   GraduationCap,
+  CreditCard,
+  CalendarCheck,
   FileText,
   Receipt,
   Wallet,
@@ -14,24 +16,30 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import './Layout.css';
 
 const nav = [
-  { path: '/dashboard',    icon: LayoutDashboard, label: 'Tableau de bord' },
-  { path: '/eleves',       icon: GraduationCap,   label: 'Élèves & Matricules' },
-  { path: '/bulletin',     icon: FileText,        label: 'Bulletins de notes' },
-  { path: '/paiement',     icon: Receipt,         label: 'Reçus de paiement' },
-  { path: '/comptabilite', icon: Wallet,          label: 'Comptabilité' },
-  { path: '/personnel',    icon: Users,           label: 'Personnel' },
-  { path: '/parametres',   icon: Settings,        label: 'Paramètres' },
+  { path: '/dashboard',    icon: LayoutDashboard, label: 'Tableau de bord', roles: ['directeur', 'comptable', 'secretaire', 'enseignant'] },
+  { path: '/eleves',       icon: GraduationCap,   label: 'Élèves & Fiches', roles: ['directeur', 'secretaire', 'enseignant'] },
+  { path: '/badges',       icon: CreditCard,      label: 'Cartes & Badges', roles: ['directeur', 'secretaire'] },
+  { path: '/viescolaire',  icon: CalendarCheck,   label: 'Vie Scolaire',    roles: ['directeur', 'secretaire', 'enseignant'] },
+  { path: '/bulletin',     icon: FileText,        label: 'Bulletins',       roles: ['directeur', 'secretaire', 'enseignant'] },
+  { path: '/paiement',     icon: Receipt,         label: 'Reçus & Impayés', roles: ['directeur', 'comptable', 'secretaire'] },
+  { path: '/comptabilite', icon: Wallet,          label: 'Comptabilité',    roles: ['directeur', 'comptable'] },
+  { path: '/personnel',    icon: Users,           label: 'Personnel',       roles: ['directeur', 'comptable'] },
+  { path: '/parametres',   icon: Settings,        label: 'Paramètres',      roles: ['directeur'] },
 ];
 
 export default function Layout({ children }) {
-  const { parametres } = useApp();
+  const { parametres, currentRole, changeRole, ROLES } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Filtrer les onglets accessibles par le profil actif
+  const visibleNav = nav.filter(item => item.roles.includes(currentRole || 'directeur'));
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
@@ -71,7 +79,7 @@ export default function Layout({ children }) {
         )}
 
         <nav className="sidebar-nav">
-          {nav.map(item => {
+          {visibleNav.map(item => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -89,7 +97,14 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="sidebar-footer">
-          {!collapsed && <span>© {new Date().getFullYear()} {parametres?.nom || 'GSEK'}</span>}
+          {!collapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span>© {new Date().getFullYear()} {parametres?.nom?.split(' ')[0] || 'GSEK'}</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                Rôle : {ROLES[currentRole]?.label}
+              </span>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -113,12 +128,42 @@ export default function Layout({ children }) {
               </div>
             </div>
           </div>
+
           <div className="header-right">
-            <div className="header-user">
-              <div className="user-avatar">AD</div>
-              <div className="user-info desktop-only">
-                <div className="user-name">Direction</div>
-                <div className="user-role">Administrateur</div>
+            {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '4px 10px', borderRadius: 20 }}>
+                <ShieldCheck size={16} color="var(--primary)" />
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
+                <select
+                  value={currentRole}
+                  onChange={e => changeRole(e.target.value)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    color: 'var(--primary)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    padding: '2px 0'
+                  }}
+                  title="Changer de profil d'accès (Directeur / Comptable / Secrétaire / Enseignant)"
+                >
+                  {Object.values(ROLES).map(r => (
+                    <option key={r.id} value={r.id}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="header-user">
+                <div className="user-avatar" style={{ background: currentRole === 'directeur' ? '#c8960c' : '#1a3a6b' }}>
+                  {currentRole[0].toUpperCase()}
+                </div>
+                <div className="user-info desktop-only">
+                  <div className="user-name">{ROLES[currentRole]?.label}</div>
+                  <div className="user-role">{currentRole === 'directeur' ? 'Administrateur' : 'Poste restreint'}</div>
+                </div>
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@ import {
   Filter,
   CreditCard,
   Calendar,
+  MessageSquare,
   X
 } from 'lucide-react';
 
@@ -93,6 +94,27 @@ export default function PaiementPage() {
       ? (parametres?.fraisInscription || '')
       : (parametres?.fraisMensualite || '');
     setForm(prev => ({ ...prev, type, montant: defaultMontant, mois: type === 'inscription' ? '' : prev.mois }));
+  };
+
+  const handleWhatsAppRelance = (eleve, mois) => {
+    if (!eleve.parentTel) {
+      return toast.warning(`Aucun numéro de téléphone renseigné pour le parent de ${eleve.nom} ${eleve.prenom}.`);
+    }
+
+    // Nettoyage du numéro de téléphone
+    let cleanPhone = eleve.parentTel.replace(/[\s\.\-\(\)]/g, '');
+    if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+    // Si format national sénégalais à 9 chiffres commençant par 7 (ex: 771234567, 76..., 78...)
+    if (cleanPhone.length === 9 && cleanPhone.startsWith('7')) {
+      cleanPhone = '221' + cleanPhone;
+    }
+
+    const parentNom = eleve.parentNom ? `M./Mme ${eleve.parentNom}` : 'Chers Parents';
+    const message = `Bonjour ${parentNom},\n\nLe ${parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"} vous informe que la mensualité du mois de *${mois}* pour votre enfant *${eleve.nom} ${eleve.prenom}* (Matricule : ${eleve.matricule}) d'un montant de *${fmt(fraisMensuel)}* est en attente de règlement.\n\nMerci de bien vouloir vous rapprocher du service de la comptabilité pour régulariser la situation.\n\n_Direction GSEK — Excellence · Discipline · Réussite_`;
+
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    toast.success(`Relance WhatsApp préparée pour ${eleve.nom} ${eleve.prenom} !`);
   };
 
   const handleExportCsv = () => {
@@ -403,13 +425,33 @@ export default function PaiementPage() {
                                 <Printer size={13} /> Reçu
                               </button>
                             ) : (
-                              <button
-                                className="btn btn-primary"
-                                style={{ padding: '5px 12px', fontSize: 12 }}
-                                onClick={() => openNewPayment(eleve.id, moisSuivi)}
-                              >
-                                <CreditCard size={13} /> Encaisser
-                              </button>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ padding: '5px 10px', fontSize: 12 }}
+                                  onClick={() => openNewPayment(eleve.id, moisSuivi)}
+                                  title="Encaisser la mensualité"
+                                >
+                                  <CreditCard size={13} /> Encaisser
+                                </button>
+                                <button
+                                  className="btn"
+                                  style={{
+                                    padding: '5px 10px',
+                                    fontSize: 12,
+                                    background: '#25D366',
+                                    color: 'white',
+                                    border: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5
+                                  }}
+                                  onClick={() => handleWhatsAppRelance(eleve, moisSuivi)}
+                                  title="Envoyer un rappel de paiement par WhatsApp"
+                                >
+                                  <MessageSquare size={13} /> Relancer
+                                </button>
+                              </div>
                             )}
                           </div>
                         </td>
