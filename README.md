@@ -9,12 +9,16 @@ Application web complète de gestion scolaire développée en React.
 
 | Module | Fonctionnalités |
 |--------|----------------|
-| 🎒 **Élèves** | Inscription, matricule automatique, fiche imprimable |
-| 📋 **Bulletins** | Saisie des notes, calcul automatique des moyennes, impression |
-| 🧾 **Paiements** | Reçus d'inscription et mensualités, impression officielle |
-| 💰 **Comptabilité** | Recettes, dépenses, graphiques, solde général |
-| 👨‍🏫 **Personnel** | Gestion des enseignants et staff, salaires |
-| ⚙️ **Paramètres** | Configuration de l'école, tarification |
+| 🎒 **Élèves** | Inscription, matricule automatique, édition, export CSV, fiche imprimable |
+| 🪪 **Cartes & Badges** | Cartes d'identité scolaires officielles avec **QR Code** scannable et impression A4 |
+| ⏱️ **Vie Scolaire** | Cahier d'appel du jour, registre des absences/retards, impact sur bulletin |
+| 📋 **Bulletins** | Saisie et validation des notes (0-20), calcul automatique des moyennes, assiduité |
+| 🧾 **Paiements** | Reçus officiels, suivi des impayés par classe et **relance WhatsApp en 1 clic** |
+| 💰 **Comptabilité** | Recettes, dépenses, graphiques dynamiques, solde général, export CSV |
+| 👨‍🏫 **Personnel** | Gestion des enseignants et staff, masse salariale, contrats |
+| 🎓 **Promotion & Clôture** | Assistant de passage de classe annuel et incrémentation de l'année scolaire |
+| 🛡️ **Profils (RBAC)** | Navigation adaptée par rôle (Directeur, Comptable, Secrétaire, Enseignant) |
+| ⚙️ **Paramètres** | Configuration de l'école, tarification, sauvegarde/restauration JSON |
 
 ---
 
