@@ -1,4 +1,5 @@
-﻿import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import './Toast.css';
 
 const ToastContext = createContext();
@@ -28,6 +29,15 @@ export const ToastProvider = ({ children }) => {
     warning: (msg, dur) => addToast(msg, 'warning', dur),
   };
 
+  const getIcon = (type) => {
+    switch (type) {
+      case 'success': return <CheckCircle2 size={16} />;
+      case 'error':   return <XCircle size={16} />;
+      case 'warning': return <AlertTriangle size={16} />;
+      default:        return <Info size={16} />;
+    }
+  };
+
   return (
     <ToastContext.Provider value={toast}>
       {children}
@@ -35,13 +45,12 @@ export const ToastProvider = ({ children }) => {
         {toasts.map(t => (
           <div key={t.id} className={`toast toast-${t.type}`} onClick={() => removeToast(t.id)}>
             <span className="toast-icon">
-              {t.type === 'success' && '✓'}
-              {t.type === 'error' && '✕'}
-              {t.type === 'warning' && '⚠'}
-              {t.type === 'info' && 'ℹ'}
+              {getIcon(t.type)}
             </span>
             <span className="toast-message">{t.message}</span>
-            <button className="toast-close" onClick={(e) => { e.stopPropagation(); removeToast(t.id); }}>×</button>
+            <button className="toast-close" onClick={(e) => { e.stopPropagation(); removeToast(t.id); }} aria-label="Fermer">
+              <X size={14} />
+            </button>
           </div>
         ))}
       </div>

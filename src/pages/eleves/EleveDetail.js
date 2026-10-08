@@ -97,9 +97,11 @@ export default function EleveDetail() {
 function PrintHeader({ parametres }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '16px 0', marginBottom: 20, borderBottom: '3px solid var(--primary)' }}>
-      <div style={{ width: 70, height: 70, background: 'var(--primary)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 30, fontWeight: 700 }}>✦</div>
+      <div style={{ width: 64, height: 64, background: 'var(--primary)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+        <GraduationCap size={34} color="#ffffff" />
+      </div>
       <div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary)', fontFamily: 'Playfair Display, serif' }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>
           {parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>

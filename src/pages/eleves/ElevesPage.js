@@ -310,7 +310,10 @@ export default function ElevesPage() {
                 <input value={form.adresse} onChange={e => setForm({ ...form, adresse: e.target.value })} placeholder="Dakar, Médina" />
               </div>
               {!editingEleve && (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>✦ Un matricule unique sera généré automatiquement</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary-accent)', display: 'inline-block' }} />
+                  Un matricule unique sera généré automatiquement
+                </p>
               )}
             </div>
             <div className="modal-footer">

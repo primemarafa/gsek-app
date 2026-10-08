@@ -2,17 +2,19 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg);
 }
 
 .sidebar {
   width: var(--sidebar-width);
   background: var(--primary-dark);
-  color: white;
+  color: #f1f5f9;
   display: flex;
   flex-direction: column;
-  transition: width 0.25s ease;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
   overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .app-layout.collapsed .sidebar { width: 72px; }
@@ -21,79 +23,101 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.10);
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
 }
 
 .brand-logo {
-  width: 40px;
-  height: 40px;
-  background: var(--secondary);
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
-
-.logo-star { font-size: 20px; color: white; }
 
 .brand-text { flex: 1; min-width: 0; }
 
 .brand-name {
-  display: block;
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
-  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.brand-name .accent-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--secondary);
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .brand-sub {
   display: block;
   font-size: 11px;
-  color: rgba(255,255,255,0.55);
+  color: #94a3b8;
+  font-weight: 500;
   margin-top: 1px;
+  letter-spacing: 0.01em;
 }
 
 .collapse-btn {
   position: absolute;
-  right: -12px;
+  right: -11px;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  background: var(--primary-light);
-  border: none;
+  width: 22px;
+  height: 22px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
-  color: white;
+  color: #e2e8f0;
   font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.collapse-btn:hover {
+  background: #334155;
+  color: #ffffff;
 }
 
 .sidebar-school-name {
   padding: 12px 16px 0;
   font-size: 11px;
-  color: var(--secondary-light);
+  color: #cbd5e1;
   font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+  line-height: 1.45;
 }
 
-.school-konate { color: white; font-size: 13px; font-weight: 700; }
+.school-devise {
+  color: #64748b;
+  font-size: 11px;
+  font-style: italic;
+  margin-top: 2px;
+}
 
 .sidebar-nav {
   flex: 1;
   padding: 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   overflow-y: auto;
 }
 
@@ -101,37 +125,50 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
-  color: rgba(255,255,255,0.70);
-  font-size: 14px;
+  color: #94a3b8;
+  font-size: 13.5px;
   font-weight: 500;
-  transition: all 0.18s;
+  transition: all 0.15s ease;
   text-decoration: none;
 }
 
 .nav-item:hover {
-  background: rgba(255,255,255,0.10);
-  color: white;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.10);
   color: #ffffff;
-  font-weight: 700;
-  border-left: 3.5px solid var(--secondary);
+  font-weight: 600;
+  border-left: 3px solid var(--secondary);
   padding-left: 9px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.nav-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
-.nav-label { white-space: nowrap; overflow: hidden; }
+.nav-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 14px 16px;
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  color: #64748b;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .main-area {
@@ -143,13 +180,14 @@
 
 .top-header {
   height: var(--header-height);
-  background: white;
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
   flex-shrink: 0;
+  gap: 16px;
 }
 
 .header-left { display: flex; align-items: center; gap: 14px; }
@@ -161,10 +199,11 @@
 }
 
 .header-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--accent);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   color: var(--primary);
   display: flex;
   align-items: center;
@@ -174,13 +213,22 @@
 .header-school-name {
   font-weight: 700;
   color: var(--primary);
-  font-size: 15px;
-  font-family: 'Playfair Display', serif;
+  font-size: 14.5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.01em;
 }
 
-.header-school-sub { font-size: 12px; color: var(--text-muted); }
+.header-school-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
-.header-right { display: flex; align-items: center; }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
 .header-user {
   display: flex;
@@ -189,8 +237,8 @@
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   background: var(--primary);
   color: white;
   border-radius: 50%;
@@ -198,11 +246,21 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
 }
 
-.user-name { font-weight: 600; font-size: 14px; }
-.user-role { font-size: 12px; color: var(--text-muted); }
+.user-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.user-role {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
 
 .main-content {
   flex: 1;
@@ -238,13 +296,9 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 998;
-}
-
-.school-devise {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 11px;
-  font-style: italic;
 }
 
 @media (max-width: 900px) {
