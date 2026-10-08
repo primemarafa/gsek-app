@@ -150,82 +150,106 @@ export default function ParametresPage() {
         )}
       </div>
 
-      {/* Onglets */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+      {/* Onglets segmentés modernes */}
+      <div className="tabs-container">
         <button
-          className={`btn ${activeTab === 'general' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`tab-btn ${activeTab === 'general' ? 'active' : ''}`}
           onClick={() => setActiveTab('general')}
-          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
         >
           <School size={16} /> Configuration & Sauvegarde
         </button>
         <button
-          className={`btn ${activeTab === 'cloture' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`tab-btn ${activeTab === 'cloture' ? 'active' : ''}`}
           onClick={() => setActiveTab('cloture')}
-          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          <GraduationCap size={16} /> Clôture & Passage de Classe (Promotion)
+          <GraduationCap size={16} /> Clôture & Passage de classe
         </button>
       </div>
 
       {activeTab === 'general' ? (
-        <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
+        <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
           <div className="card">
-            <h3 style={{ marginBottom: 20, fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <School size={19} color="var(--primary)" /> Informations de l'école
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                <School size={18} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Informations de l'établissement</h3>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Coordonnées officielles de l'école</p>
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Nom de l'établissement</label>
-              <input value={ecole.nom || ''} onChange={e => setEcole({ ...ecole, nom: e.target.value })} />
+              <input type="text" value={ecole.nom || ''} onChange={e => setEcole({ ...ecole, nom: e.target.value })} placeholder="ex: Groupe Scolaire d'Excellence Sidy Konaté" />
             </div>
+
             <div className="form-group">
               <label>Devise / Slogan</label>
-              <input value={ecole.devise || ''} onChange={e => setEcole({ ...ecole, devise: e.target.value })} />
+              <input type="text" value={ecole.devise || ''} onChange={e => setEcole({ ...ecole, devise: e.target.value })} placeholder="ex: Excellence · Discipline · Réussite" />
             </div>
-            <div className="form-group">
-              <label>Adresse</label>
-              <input value={ecole.adresse || ''} onChange={e => setEcole({ ...ecole, adresse: e.target.value })} />
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Adresse physique</label>
+                <input type="text" value={ecole.adresse || ''} onChange={e => setEcole({ ...ecole, adresse: e.target.value })} placeholder="ex: Dakar, Sénégal" />
+              </div>
+              <div className="form-group">
+                <label>Numéro de téléphone</label>
+                <input type="tel" value={ecole.telephone || ''} onChange={e => setEcole({ ...ecole, telephone: e.target.value })} placeholder="ex: +221 33 800 00 00" />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Téléphone</label>
-              <input value={ecole.telephone || ''} onChange={e => setEcole({ ...ecole, telephone: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input type="email" value={ecole.email || ''} onChange={e => setEcole({ ...ecole, email: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Site web</label>
-              <input value={ecole.siteWeb || ''} onChange={e => setEcole({ ...ecole, siteWeb: e.target.value })} />
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Email de contact</label>
+                <input type="email" value={ecole.email || ''} onChange={e => setEcole({ ...ecole, email: e.target.value })} placeholder="ex: contact@gsek.sn" />
+              </div>
+              <div className="form-group">
+                <label>Site web officiel</label>
+                <input type="text" value={ecole.siteWeb || ''} onChange={e => setEcole({ ...ecole, siteWeb: e.target.value })} placeholder="ex: www.gsek.sn" />
+              </div>
             </div>
           </div>
 
           <div>
             <div className="card" style={{ marginBottom: 20 }}>
-              <h3 style={{ marginBottom: 20, fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Calendar size={19} color="var(--primary)" /> Année scolaire & Tarification
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 8, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Année scolaire & Tarification</h3>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Période active et montants de référence</p>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Année scolaire en cours</label>
                 <select value={ecole.anneeScolaire || '2024-2025'} onChange={e => setEcole({ ...ecole, anneeScolaire: e.target.value })}>
                   {ANNEES.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
-              <div className="form-group">
-                <label>Frais d'inscription par défaut (FCFA)</label>
-                <input
-                  type="number"
-                  value={ecole.fraisInscription || ''}
-                  onChange={e => setEcole({ ...ecole, fraisInscription: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="form-group">
-                <label>Mensualité par défaut (FCFA)</label>
-                <input
-                  type="number"
-                  value={ecole.fraisMensualite || ''}
-                  onChange={e => setEcole({ ...ecole, fraisMensualite: parseFloat(e.target.value) || 0 })}
-                />
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Frais d'inscription (FCFA)</label>
+                  <input
+                    type="number"
+                    value={ecole.fraisInscription || ''}
+                    onChange={e => setEcole({ ...ecole, fraisInscription: parseFloat(e.target.value) || 0 })}
+                    placeholder="ex: 25000"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mensualité par défaut (FCFA)</label>
+                  <input
+                    type="number"
+                    value={ecole.fraisMensualite || ''}
+                    onChange={e => setEcole({ ...ecole, fraisMensualite: parseFloat(e.target.value) || 0 })}
+                    placeholder="ex: 15000"
+                  />
+                </div>
               </div>
             </div>
 

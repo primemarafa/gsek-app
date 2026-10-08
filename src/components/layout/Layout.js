@@ -68,14 +68,14 @@ export default function Layout({ children }) {
           {!collapsed && (
             <div className="brand-text">
               <div className="brand-name">
-                <span>{parametres?.nom ? parametres.nom.split(' ')[0] : 'GSEK'}</span>
-                <span className="accent-dot" />
+                <span>GSEK</span>
+                <span className="brand-badge">Scolaire</span>
               </div>
-              <span className="brand-sub">Système de gestion</span>
+              <span className="brand-sub">Sidy Konaté</span>
             </div>
           )}
           <button
-            className="collapse-btn desktop-only"
+            className="sidebar-collapse-btn desktop-only"
             onClick={() => setCollapsed(!collapsed)}
             title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
           >
@@ -117,7 +117,7 @@ export default function Layout({ children }) {
         <div className="sidebar-footer">
           {!collapsed && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span>© {new Date().getFullYear()} {parametres?.nom?.split(' ')[0] || 'GSEK'}</span>
+              <span>© {new Date().getFullYear()} GSEK</span>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                 Rôle : {ROLES[currentRole]?.label}
               </span>
@@ -134,67 +134,39 @@ export default function Layout({ children }) {
               onClick={() => setMobileOpen(true)}
               aria-label="Ouvrir le menu"
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
-            <div className="header-school">
-              <div className="header-icon-box">
-                <School size={20} />
-              </div>
-              <div>
-                <div className="header-school-name">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}</div>
-                <div className="header-school-sub">Année scolaire {parametres?.anneeScolaire || "2024-2025"}</div>
-              </div>
+            <div className="header-school-tag">
+              <School size={16} className="school-tag-icon" />
+              <span className="school-tag-title">{parametres?.nom || "Groupe Scolaire d'Excellence Sidy Konaté"}</span>
+              <span className="school-tag-badge">Année {parametres?.anneeScolaire || "2024-2025"}</span>
             </div>
           </div>
 
           <div className="header-right">
             {/* Barre de recherche rapide (Ctrl+K) */}
             <button
-              className="header-quick-search-btn desktop-only"
+              className="header-ctrlk-btn desktop-only"
               onClick={() => setPaletteOpen(true)}
               title="Recherche universelle rapide (Ctrl + K)"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '7px 14px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: '#f8fafc',
-                color: '#64748b',
-                fontSize: 13,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
             >
-              <Search size={14} color="#64748b" />
-              <span>Rechercher...</span>
-              <kbd style={{ fontSize: 10, background: 'white', padding: '1px 5px', borderRadius: 4, border: '1px solid #cbd5e1', fontWeight: 700, color: '#475569', marginLeft: 4 }}>
-                Ctrl K
-              </kbd>
+              <Search size={14} className="ctrlk-icon" />
+              <span className="ctrlk-label">Rechercher...</span>
+              <kbd className="ctrlk-kbd">Ctrl K</kbd>
             </button>
 
             {/* Centre de notifications */}
             <NotificationBell />
 
             {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)' }}>
-              <ShieldCheck size={15} color="var(--primary)" />
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
+            <div className="header-role-pill desktop-only">
+              <ShieldCheck size={14} className="role-pill-icon" />
+              <span className="role-pill-text">Profil :</span>
               <select
                 value={currentRole}
                 onChange={e => changeRole(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontWeight: 700,
-                  fontSize: 12,
-                  color: 'var(--primary)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  padding: '2px 0'
-                }}
-                title="Changer de profil d'accès (Directeur / Comptable / Secrétaire / Enseignant)"
+                className="role-pill-select"
+                title="Changer de profil d'accès"
               >
                 {Object.values(ROLES).map(r => (
                   <option key={r.id} value={r.id}>{r.label}</option>
@@ -202,13 +174,14 @@ export default function Layout({ children }) {
               </select>
             </div>
 
-            <div className="header-user">
-              <div className="user-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary)' }}>
+            {/* Profil utilisateur connecté */}
+            <div className="header-user-badge">
+              <div className="user-badge-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary-light)' }}>
                 {currentRole[0].toUpperCase()}
               </div>
-              <div className="user-info desktop-only">
-                <div className="user-name">{ROLES[currentRole]?.label}</div>
-                <div className="user-role">{currentRole === 'directeur' ? 'Administrateur' : 'Poste restreint'}</div>
+              <div className="user-badge-meta desktop-only">
+                <span className="user-badge-name">{ROLES[currentRole]?.label}</span>
+                <span className="user-badge-role">{currentRole === 'directeur' ? 'Admin' : 'Accès restreint'}</span>
               </div>
             </div>
           </div>
