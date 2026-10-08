@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import Pagination from '../../components/common/Pagination';
 import { exportToCsv } from '../../utils/exportCsv';
+import { numberToWordsFR } from '../../utils/numberToWords';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   Wallet,
@@ -16,6 +19,12 @@ import {
   Download,
   Trash2,
   Search,
+  Printer,
+  CheckCircle2,
+  Coins,
+  Smartphone,
+  Receipt,
+  Calendar,
   X
 } from 'lucide-react';
 
@@ -26,9 +35,14 @@ const COLORS_REC = ['#1a3a6b', '#2451a3', '#4a74c9', '#7ea6e0'];
 const COLORS_DEP = ['#c8960c', '#e8b020', '#d85a30', '#993c1d'];
 
 export default function ComptabilitePage() {
-  const { transactions, addTransaction, deleteTransaction } = useApp();
+  const { transactions, paiements, addTransaction, deleteTransaction, parametres, currentUser } = useApp();
   const toast = useToast();
+  const navigate = useNavigate();
+  const printCaisseRef = useRef();
+  const handlePrintCaisse = useReactToPrint({ content: () => printCaisseRef.current });
 
+  const [activeTab, setActiveTab] = useState('journal'); // 'journal' | 'caisse'
+  const [caisseDate, setCaisseDate] = useState(new Date().toISOString().split('T')[0]);
   const [showModal, setShowModal] = useState(false);
   const [filterType, setFilterType] = useState('');
   const [search, setSearch] = useState('');
@@ -63,6 +77,14 @@ export default function ComptabilitePage() {
 
   const pieRecettes = Object.entries(recettesCats).map(([name, value]) => ({ name, value }));
   const pieDepenses = Object.entries(depensesCats).map(([name, value]) => ({ name, value }));
+
+  // Données de la Clôture Journalière de Caisse
+  const paiementsCaisse = (paiements || []).filter(p => (p.date || p.datePaiement) === caisseDate);
+  const totalCaisse = paiementsCaisse.reduce((s, p) => s + (p.montant || 0), 0);
+  const especesCaisse = paiementsCaisse.filter(p => (p.modePaiement || '').toLowerCase().includes('espece')).reduce((s, p) => s + (p.montant || 0), 0);
+  const waveCaisse = paiementsCaisse.filter(p => (p.modePaiement || '').toLowerCase().includes('wave')).reduce((s, p) => s + (p.montant || 0), 0);
+  const omCaisse = paiementsCaisse.filter(p => (p.modePaiement || '').toLowerCase().includes('orange')).reduce((s, p) => s + (p.montant || 0), 0);
+  const autresCaisse = totalCaisse - especesCaisse - waveCaisse - omCaisse;
 
   const handleExportCsv = () => {
     if (filtered.length === 0) {
@@ -131,7 +153,25 @@ export default function ComptabilitePage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
+      {/* Sélecteur d'onglets */}
+      <div className="tabs-container no-print" style={{ marginBottom: 20 }}>
+        <button
+          className={`tab-btn ${activeTab === 'journal' ? 'active' : ''}`}
+          onClick={() => setActiveTab('journal')}
+        >
+          Journal des Flux & Budgets
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'caisse' ? 'active' : ''}`}
+          onClick={() => setActiveTab('caisse')}
+        >
+          Clôture Journalière de Caisse ({fmt(totalCaisse)})
+        </button>
+      </div>
+
+      {activeTab === 'journal' ? (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-icon green"><TrendingUp size={24} /></div>
           <div>
@@ -264,6 +304,175 @@ export default function ComptabilitePage() {
           </div>
         )}
       </div>
+    </div>
+  ) : (
+    /* ======================================================== */
+    /* ONGLET : CLÔTURE JOURNALIÈRE DE CAISSE                   */
+    /* ======================================================== */
+    <div>
+      <div className="card no-print" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Calendar size={18} color="var(--primary)" />
+            <label style={{ fontWeight: 700, fontSize: 14 }}>Date de la session de caisse :</label>
+            <input
+              type="date"
+              value={caisseDate}
+              onChange={e => setCaisseDate(e.target.value)}
+              style={{ width: 'auto', fontWeight: 600 }}
+            />
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={handlePrintCaisse}
+            disabled={paiementsCaisse.length === 0}
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <Printer size={16} /> Imprimer l'arrêté de caisse ({paiementsCaisse.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Cartes récapitulatives par mode d'encaissement */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="stat-card" style={{ borderLeft: '4px solid #10b981' }}>
+          <div className="stat-icon green"><Receipt size={24} /></div>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>TOTAL ENCAISSÉ</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#10b981' }}>{fmt(totalCaisse)}</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{paiementsCaisse.length} opération(s)</div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="stat-icon gold"><Coins size={24} /></div>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>ESPÈCES EN CAISSE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#b45309' }}>{fmt(especesCaisse)}</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Billets & pièces physiques</div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ borderLeft: '4px solid #0284c7' }}>
+          <div className="stat-icon blue"><Smartphone size={24} /></div>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>WAVE & ORANGE MONEY</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0369a1' }}>{fmt(waveCaisse + omCaisse)}</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Wave: {fmt(waveCaisse)} · OM: {fmt(omCaisse)}</div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+          <div className="stat-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}><CheckCircle2 size={24} /></div>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>CHÈQUES & VIREMENTS</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#6d28d9' }}>{fmt(autresCaisse)}</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Virements & traites bancaires</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bordereau imprimable de clôture de caisse */}
+      <div ref={printCaisseRef} className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+          <div>
+            <h3 style={{ fontSize: 18, margin: '0 0 4px 0' }}>Bordereau Officiel de Clôture de Caisse</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              Date d'arrêté : <strong>{caisseDate}</strong> · Établissement : {parametres?.nom || "GSEK Sidy Konaté"}
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span className="badge badge-success" style={{ fontSize: 13, padding: '6px 12px' }}>
+              Total Arrêté : {fmt(totalCaisse)}
+            </span>
+          </div>
+        </div>
+
+        {paiementsCaisse.length === 0 ? (
+          <div className="empty-state">
+            <p>Aucun encaissement enregistré pour la date du {caisseDate}.</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Réf. Reçu</th>
+                  <th>Élève & Matricule</th>
+                  <th>Classe</th>
+                  <th>Motif</th>
+                  <th>Mode</th>
+                  <th style={{ textAlign: 'right' }}>Montant</th>
+                  <th className="no-print" style={{ textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paiementsCaisse.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+                        {p.ref}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{p.eleveNom}</div>
+                      <div style={{ fontSize: 11, color: '#64748b' }}>{p.eleveMatricule}</div>
+                    </td>
+                    <td>{p.classe || p.eleveClasse}</td>
+                    <td>{p.type === 'inscription' ? "Inscription" : `Mensualité (${p.mois || '—'})`}</td>
+                    <td>
+                      <span className="badge badge-info" style={{ textTransform: 'capitalize' }}>
+                        {p.modePaiement}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
+                      {fmt(p.montant)}
+                    </td>
+                    <td className="no-print" style={{ textAlign: 'right' }}>
+                      <button
+                        className="btn btn-outline"
+                        style={{ padding: '4px 8px', fontSize: 11 }}
+                        onClick={() => navigate(`/paiement/${p.id}`)}
+                      >
+                        Reçu
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
+                  <td colSpan={5}>TOTAL GÉNÉRAL ENCAISSÉ :</td>
+                  <td style={{ textAlign: 'right', fontSize: 16, color: '#10b981' }}>{fmt(totalCaisse)}</td>
+                  <td className="no-print"></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Arrêté en toutes lettres et visas */}
+            <div style={{ marginTop: 24, padding: 16, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: 13, color: '#334155', marginBottom: 14 }}>
+                Arrêté la présente caisse journalière à la somme totale de :{' '}
+                <strong>« {numberToWordsFR(totalCaisse)} »</strong>, certifié exact et conforme aux écritures.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 24, paddingTop: 10, borderTop: '1px dashed #cbd5e1' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>L'Agent Caissier / Comptable</div>
+                  <div style={{ height: 60 }}></div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{currentUser ? `${currentUser.prenom} ${currentUser.nom}` : 'Nom & Signature'}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Le Directeur Général (Visa)</div>
+                  <div style={{ height: 60 }}></div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Signature & Cachet Officiel</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )}
 
       <ConfirmModal
         isOpen={!!deleteTarget}
