@@ -9,7 +9,8 @@ import {
   Receipt,
   Calendar,
   FileText,
-  Plus
+  Plus,
+  ArrowRight
 } from 'lucide-react';
 
 const fmt = (n) => new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n);
@@ -123,30 +124,49 @@ export default function Dashboard() {
 
       <div className="dash-grid">
         <div className="card" style={{ gridColumn: '1 / 3' }}>
-          <h3 style={{ marginBottom: 20 }}>📊 Recettes vs Dépenses (FCFA)</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Recettes vs Dépenses</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Flux financier mensuel (FCFA)</p>
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#1e3a8a', display: 'inline-block' }} />
+                Recettes
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#d97706', display: 'inline-block' }} />
+                Dépenses
+              </span>
+            </div>
+          </div>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} barSize={28}>
-              <XAxis dataKey="mois" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1000000).toFixed(1)}M`} />
-              <Tooltip formatter={(v) => fmt(v)} />
-              <Bar dataKey="recettes" fill="#1a3a6b" name="Recettes" radius={[4,4,0,0]} />
-              <Bar dataKey="depenses" fill="#c8960c" name="Dépenses" radius={[4,4,0,0]} />
+            <BarChart data={chartData} barSize={24}>
+              <XAxis dataKey="mois" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={v => `${(v/1000000).toFixed(1)}M`} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: '#0f172a', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12 }} />
+              <Bar dataKey="recettes" fill="#1e3a8a" name="Recettes" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="depenses" fill="#d97706" name="Dépenses" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: 16 }}>🎒 Répartition par classe</h3>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Répartition par classe</h3>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Top classes par effectif</p>
+          </div>
           {classesAffichees.map(item => {
             const count = item.count;
             const pct = elevesActifs ? Math.round((count / elevesActifs) * 100) : 0;
             return (
-              <div key={item.nom} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                  <span>{item.nom}</span><span style={{ fontWeight: 600 }}>{count} élève{count > 1 ? 's' : ''}</span>
+              <div key={item.nom} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
+                  <span style={{ fontWeight: 500, color: 'var(--text)' }}>{item.nom}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{count} élève{count > 1 ? 's' : ''} ({pct}%)</span>
                 </div>
-                <div style={{ background: '#eef2f9', borderRadius: 4, height: 8 }}>
-                  <div style={{ width: `${pct || 0}%`, background: 'var(--primary)', height: '100%', borderRadius: 4, transition: 'width 0.6s' }} />
+                <div style={{ background: '#f1f5f9', borderRadius: 6, height: 6, overflow: 'hidden' }}>
+                  <div style={{ width: `${pct || 0}%`, background: 'var(--primary-accent)', height: '100%', borderRadius: 6, transition: 'width 0.6s ease' }} />
                 </div>
               </div>
             );
@@ -155,20 +175,25 @@ export default function Dashboard() {
 
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3>🧾 Paiements récents</h3>
-            <button className="btn btn-outline" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => navigate('/paiement')}>Voir tout</button>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Paiements récents</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Derniers encaissements</p>
+            </div>
+            <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => navigate('/paiement')}>
+              Voir tout <ArrowRight size={13} />
+            </button>
           </div>
           {paiementsRecents.length === 0 ? (
-            <div className="empty-state"><p>Aucun paiement enregistré</p></div>
+            <div className="empty-state" style={{ padding: '30px 10px' }}><p>Aucun paiement enregistré</p></div>
           ) : (
             paiementsRecents.map(p => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{p.eleveNom}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.ref} · {p.datePaiement}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--text)' }}>{p.eleveNom}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{p.ref} · {p.datePaiement}</div>
                 </div>
                 <div>
-                  <span className="badge badge-success">{fmt(p.montant)}</span>
+                  <span className="badge badge-success" style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{fmt(p.montant)}</span>
                 </div>
               </div>
             ))
@@ -177,19 +202,22 @@ export default function Dashboard() {
       </div>
 
       <div className="dash-quick-actions card" style={{ marginTop: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>⚡ Actions rapides</h3>
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Actions rapides</h3>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Raccourcis vers les opérations courantes</p>
+        </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => navigate('/eleves')}>
-            <Plus size={16} /> Inscrire un élève
+            <Plus size={15} /> Inscrire un élève
           </button>
           <button className="btn btn-secondary" onClick={() => navigate('/paiement')}>
-            <Receipt size={16} /> Nouveau reçu
+            <Receipt size={15} /> Nouveau reçu
           </button>
           <button className="btn btn-outline" onClick={() => navigate('/bulletin')}>
-            <FileText size={16} /> Saisir les notes
+            <FileText size={15} /> Saisir les notes
           </button>
           <button className="btn btn-outline" onClick={() => navigate('/comptabilite')}>
-            <Wallet size={16} /> Ajouter transaction
+            <Wallet size={15} /> Ajouter transaction
           </button>
         </div>
       </div>

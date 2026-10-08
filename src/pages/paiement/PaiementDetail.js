@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, School } from 'lucide-react';
 import './Receipt.css';
 
 const fmt = n => new Intl.NumberFormat('fr-SN').format(n) + ' FCFA';
@@ -39,7 +39,9 @@ export default function PaiementDetail() {
         <div className="receipt-card">
           <div className="receipt-header">
             <div className="receipt-logo-block">
-              <div className="receipt-logo">✦</div>
+              <div className="receipt-logo">
+                <School size={28} color="#ffffff" />
+              </div>
               <div>
                 <div className="receipt-school-name">{parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}</div>
                 <div className="receipt-school-sub">{parametres?.devise || 'Excellence · Discipline · Réussite'} · {parametres?.adresse || 'Dakar, Sénégal'}</div>
@@ -48,7 +50,7 @@ export default function PaiementDetail() {
             </div>
             <div className="receipt-ref-badge">
               <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2 }}>REÇU N°</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{p.ref}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{p.ref}</div>
             </div>
           </div>
 
@@ -56,14 +58,14 @@ export default function PaiementDetail() {
 
           <div className="receipt-body">
             <div className="receipt-section">
-              <div className="receipt-section-title">📋 Informations de l'élève</div>
+              <div className="receipt-section-title">Informations de l'élève</div>
               <div className="receipt-row"><span>Nom et prénom</span><span><strong>{p.eleveNom}</strong></span></div>
-              <div className="receipt-row"><span>Matricule</span><span style={{ fontFamily: 'monospace' }}>{p.eleveMatricule}</span></div>
+              <div className="receipt-row"><span>Matricule</span><span style={{ fontFamily: 'var(--font-mono)' }}>{p.eleveMatricule}</span></div>
               <div className="receipt-row"><span>Classe</span><span>{p.eleveClasse}</span></div>
             </div>
 
             <div className="receipt-section">
-              <div className="receipt-section-title">💰 Détails du paiement</div>
+              <div className="receipt-section-title">Détails du paiement</div>
               <div className="receipt-row"><span>Type</span><span>{p.type === 'inscription' ? "Frais d'inscription" : 'Mensualité scolaire'}</span></div>
               {p.mois && <div className="receipt-row"><span>Mois concerné</span><span>{p.mois}</span></div>}
               <div className="receipt-row"><span>Mode de paiement</span><span style={{ textTransform: 'capitalize' }}>{p.modePaiement?.replace('_', ' ')}</span></div>
@@ -72,7 +74,7 @@ export default function PaiementDetail() {
 
             {p.remarques && (
               <div className="receipt-section">
-                <div className="receipt-section-title">📝 Remarques</div>
+                <div className="receipt-section-title">Remarques</div>
                 <p style={{ fontSize: 14, color: '#444', fontStyle: 'italic' }}>{p.remarques}</p>
               </div>
             )}
@@ -81,11 +83,11 @@ export default function PaiementDetail() {
           <div className="receipt-total">
             <div>
               <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>Montant total payé</div>
-              <div className="receipt-amount">{fmt(p.montant)}</div>
+              <div className="receipt-amount" style={{ fontFamily: 'var(--font-mono)' }}>{fmt(p.montant)}</div>
             </div>
             <div style={{ textAlign: 'right', fontSize: 13, opacity: 0.85 }}>
               <div style={{ fontWeight: 700, marginBottom: 4 }}>REÇU ET APPROUVÉ</div>
-              <div>Année scolaire 2024-2025</div>
+              <div>Année scolaire {parametres?.anneeScolaire || '2024-2025'}</div>
             </div>
           </div>
 

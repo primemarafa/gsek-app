@@ -18,7 +18,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   ShieldCheck,
   Search
 } from 'lucide-react';
@@ -64,11 +63,14 @@ export default function Layout({ children }) {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="brand-logo">
-            <Sparkles size={20} className="logo-star" />
+            <GraduationCap size={20} color="#f59e0b" />
           </div>
           {!collapsed && (
             <div className="brand-text">
-              <span className="brand-name">{parametres?.nom ? parametres.nom.split(' ')[0] : 'GSEK'}</span>
+              <div className="brand-name">
+                <span>{parametres?.nom ? parametres.nom.split(' ')[0] : 'GSEK'}</span>
+                <span className="accent-dot" />
+              </div>
               <span className="brand-sub">Système de gestion</span>
             </div>
           )}
@@ -155,9 +157,9 @@ export default function Layout({ children }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '6px 14px',
-                borderRadius: 20,
-                border: '1.5px solid var(--border)',
+                padding: '7px 14px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
                 background: '#f8fafc',
                 color: '#64748b',
                 fontSize: 13,
@@ -165,9 +167,9 @@ export default function Layout({ children }) {
                 transition: 'all 0.15s ease'
               }}
             >
-              <Search size={15} color="var(--primary)" />
+              <Search size={14} color="#64748b" />
               <span>Rechercher...</span>
-              <kbd style={{ fontSize: 10, background: 'white', padding: '1px 5px', borderRadius: 4, border: '1px solid #cbd5e1', fontWeight: 700, color: '#475569' }}>
+              <kbd style={{ fontSize: 10, background: 'white', padding: '1px 5px', borderRadius: 4, border: '1px solid #cbd5e1', fontWeight: 700, color: '#475569', marginLeft: 4 }}>
                 Ctrl K
               </kbd>
             </button>
@@ -176,8 +178,8 @@ export default function Layout({ children }) {
             <NotificationBell />
 
             {/* Sélecteur de rôle en direct (RBAC multi-postes) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '4px 10px', borderRadius: 20 }}>
-              <ShieldCheck size={16} color="var(--primary)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <ShieldCheck size={15} color="var(--primary)" />
               <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }} className="desktop-only">Profil :</label>
               <select
                 value={currentRole}
@@ -201,7 +203,7 @@ export default function Layout({ children }) {
             </div>
 
             <div className="header-user">
-              <div className="user-avatar" style={{ background: currentRole === 'directeur' ? '#c8960c' : '#1a3a6b' }}>
+              <div className="user-avatar" style={{ background: currentRole === 'directeur' ? 'var(--secondary)' : 'var(--primary)' }}>
                 {currentRole[0].toUpperCase()}
               </div>
               <div className="user-info desktop-only">

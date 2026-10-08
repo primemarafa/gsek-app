@@ -10,7 +10,8 @@ import {
   Filter,
   CheckSquare,
   Square,
-  QrCode
+  QrCode,
+  GraduationCap
 } from 'lucide-react';
 import './Badges.css';
 
@@ -131,7 +132,9 @@ export default function BadgesPage() {
                   onClick={() => toggleSelectEleve(eleve.id)}
                 >
                   <div className="badge-header">
-                    <div className="badge-logo-icon">✦</div>
+                    <div className="badge-logo-icon">
+                      <GraduationCap size={15} color="#ffffff" />
+                    </div>
                     <div className="badge-header-text">
                       <div className="badge-school-name">{parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}</div>
                       <div className="badge-title">CARTE D'IDENTITÉ SCOLAIRE</div>
@@ -168,7 +171,7 @@ export default function BadgesPage() {
 
                   <div className="badge-footer">
                     <span>{parametres?.devise || 'Excellence · Discipline · Réussite'}</span>
-                    <span className="badge-signature">La Direction ✍️</span>
+                    <span className="badge-signature">La Direction</span>
                   </div>
                 </div>
               );

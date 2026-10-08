@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, GraduationCap } from 'lucide-react';
 import './BulletinPrint.css';
 
 export default function BulletinDetail() {
@@ -53,7 +53,9 @@ export default function BulletinDetail() {
 
       <div ref={printRef} className="bulletin-print">
         <div className="bulletin-header">
-          <div className="bulletin-logo">✦</div>
+          <div className="bulletin-logo">
+            <GraduationCap size={36} color="#ffffff" />
+          </div>
           <div className="bulletin-school-info">
             <div className="bulletin-school-name">{parametres?.nom || "GROUPE SCOLAIRE D'EXCELLENCE SIDY KONATÉ"}</div>
             <div className="bulletin-school-sub">{parametres?.devise || 'Excellence · Discipline · Réussite'}</div>

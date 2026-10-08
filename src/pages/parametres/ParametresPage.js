@@ -11,7 +11,6 @@ import {
   Database,
   Download,
   Upload,
-  Info,
   AlertTriangle,
   GraduationCap,
   ArrowRight,
